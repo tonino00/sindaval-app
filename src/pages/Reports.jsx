@@ -82,7 +82,7 @@ const Reports = () => {
 
       <div style={styles.grid}>
         <div style={styles.previewCard}>
-          <h2 style={styles.previewTitle}>� Preview de Dados</h2>
+          <h2 style={styles.previewTitle}>📊 Preview de Dados</h2>
           {loadingPreview ? (
             <div style={styles.loadingPreview}>
               <p>⏳ Carregando preview...</p>
@@ -269,6 +269,19 @@ const styles = {
     color: '#6b7280',
     fontWeight: '400',
   },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 450px), 1fr))',
+    gap: '1.5rem',
+    marginBottom: '1.5rem',
+  },
+  previewCard: {
+    backgroundColor: '#ffffff',
+    padding: '2rem',
+    borderRadius: '1rem',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+    border: '1px solid #e5e7eb',
+  },
   singleCard: {
     maxWidth: '800px',
     margin: '0 auto 2rem auto',
@@ -374,7 +387,7 @@ const styles = {
     gap: '0.5rem',
   },
   formRow: {
-    display: 'grid',
+    display: 'inline',
     gridTemplateColumns: '1fr 1fr',
     gap: '1rem',
   },
