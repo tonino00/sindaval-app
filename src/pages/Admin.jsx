@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import api from '../services/api';
+import api, { API_URL } from '../services/api';
 
 const notificationSchema = z.object({
   titulo: z.string().min(3, 'Título deve ter no mínimo 3 caracteres'),
@@ -411,7 +411,7 @@ const Admin = () => {
                       <div style={styles.userCell}>
                         {user.fotoUrl ? (
                           <img 
-                            src={user.fotoUrl} 
+                            src={API_URL + user.fotoUrl} 
                             alt={user.nomeCompleto}
                             style={styles.userAvatarImage}
                           />

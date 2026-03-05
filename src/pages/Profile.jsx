@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useSelector, useDispatch } from 'react-redux';
-import api from '../services/api';
+import api, { API_URL } from '../services/api';
 import { getProfile } from '../features/auth/authSlice';
 
 const profileSchema = z.object({
@@ -108,7 +108,7 @@ const Profile = () => {
         <div style={styles.headerBadge}>
           {user?.fotoUrl ? (
             <img 
-              src={user.fotoUrl} 
+              src={API_URL + user.fotoUrl} 
               alt={user.nomeCompleto}
               style={styles.userAvatarImage}
             />

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import api from '../services/api';
+import api, { API_URL } from '../services/api';
 import { getProfile } from '../features/auth/authSlice';
 
 const DigitalCard = () => {
@@ -54,53 +54,76 @@ const DigitalCard = () => {
       <div style={styles.cardContainer}>
         <div style={styles.card}>
           <div style={styles.cardHeader}>
-            <div style={styles.headerContent}>
-              <div style={styles.logoSection}>
-                <div style={styles.logoCircle}>S</div>
-                <div>
-                  <h2 style={styles.cardTitle}>SINDAVAL</h2>
-                  <p style={styles.cardSubtitle}>Sindicato dos Advogados de Alagoas</p>
-                </div>
+            <div style={styles.headerTop}>
+              <div style={styles.headerLeft}>
+                <h2 style={styles.cardTitle}>SINDAVAL</h2>
+                <p style={styles.cardSubtitle}>SINDICATO DOS ADVOGADOS DE ALAGOAS</p>
               </div>
-              <div style={styles.cardNumber}>N° {user?.id?.substring(0, 8).toUpperCase()}</div>
+              <div style={styles.headerRight}>
+                <div style={styles.cardNumber}>N° {user?.id?.substring(0, 8).toUpperCase()}</div>
+                <div style={styles.validityBadge}>VÁLIDO</div>
+              </div>
             </div>
           </div>
 
           <div style={styles.cardBody}>
-            <div style={styles.cardInfo}>
-              <div style={styles.infoGroup}>
-                <label style={styles.infoLabel}>Nome</label>
-                <p style={styles.infoValue}>{user?.nomeCompleto}</p>
+            <div style={styles.mainContent}>
+              <div style={styles.photoSection}>
+                {user?.fotoUrl ? (
+                  <img 
+                    src={API_URL + user.fotoUrl} 
+                    alt={user.nomeCompleto}
+                    style={styles.userPhotoLarge}
+                  />
+                ) : (
+                  <div style={styles.userPhotoPlaceholder}>
+                    {user?.nomeCompleto?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                )}
+                <div style={styles.photoLabel}>FOTO</div>
               </div>
-
-              <div style={styles.infoRow}>
-                <div style={styles.infoGroup}>
-                  <label style={styles.infoLabel}>CPF</label>
-                  <p style={styles.infoValue}>{user?.cpf || 'Não informado'}</p>
+              
+              <div style={styles.dataSection}>
+                <div style={styles.dataRow}>
+                  <div style={styles.dataField}>
+                    <label style={styles.fieldLabel}>NOME COMPLETO</label>
+                    <p style={styles.fieldValue}>{user?.nomeCompleto?.toUpperCase()}</p>
+                  </div>
                 </div>
-                <div style={styles.infoGroup}>
-                  <label style={styles.infoLabel}>OAB</label>
-                  <p style={styles.infoValue}>{user?.numeroOAB || 'N/A'}</p>
+
+                <div style={styles.dataRow}>
+                  <div style={styles.dataField}>
+                    <label style={styles.fieldLabel}>CPF</label>
+                    <p style={styles.fieldValue}>{user?.cpf || 'NÃO INFORMADO'}</p>
+                  </div>
+                  <div style={styles.dataField}>
+                    <label style={styles.fieldLabel}>INSCRIÇÃO OAB</label>
+                    <p style={styles.fieldValue}>{user?.numeroOAB || 'N/A'}</p>
+                  </div>
                 </div>
-              </div>
 
-              <div style={styles.infoGroup}>
-                <label style={styles.infoLabel}>Email</label>
-                <p style={styles.infoValue}>{user?.email}</p>
-              </div>
+                <div style={styles.dataRow}>
+                  <div style={styles.dataField}>
+                    <label style={styles.fieldLabel}>E-MAIL</label>
+                    <p style={styles.fieldValue}>{user?.email}</p>
+                  </div>
+                </div>
 
-              <div style={styles.infoGroup}>
-                <label style={styles.infoLabel}>Status</label>
-                <span
-                  style={{
-                    ...styles.statusBadge,
-                    ...(user?.status === 'ATIVO' ? styles.statusActive : {}),
-                    ...(user?.status === 'INADIMPLENTE' ? styles.statusWarning : {}),
-                    ...(user?.status === 'INATIVO' ? styles.statusInactive : {}),
-                  }}
-                >
-                  {user?.status}
-                </span>
+                <div style={styles.dataRow}>
+                  <div style={styles.dataField}>
+                    <label style={styles.fieldLabel}>SITUAÇÃO</label>
+                    <span
+                      style={{
+                        ...styles.statusBadgeOAB,
+                        ...(user?.status === 'ATIVO' ? styles.statusActiveOAB : {}),
+                        ...(user?.status === 'INADIMPLENTE' ? styles.statusWarningOAB : {}),
+                        ...(user?.status === 'INATIVO' ? styles.statusInactiveOAB : {}),
+                      }}
+                    >
+                      {user?.status}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -219,23 +242,26 @@ const styles = {
     overflow: 'hidden',
   },
   cardHeader: {
-    background: 'linear-gradient(135deg, #1a365d 0%, #1e40af 50%, #2563eb 100%)',
-    padding: '2.5rem 2rem',
+    background: '#1a365d',
+    padding: '1.5rem 2rem',
     color: '#ffffff',
-    position: 'relative',
-    overflow: 'hidden',
+    borderBottom: '4px solid #d4af37',
   },
-  headerContent: {
+  headerTop: {
     display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    position: 'relative',
-    zIndex: 1,
-  },
-  logoSection: {
-    display: 'flex',
     alignItems: 'center',
-    gap: '1rem',
+    gap: '2rem',
+    flexWrap: 'wrap',
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  headerRight: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: '0.5rem',
   },
   logoCircle: {
     width: '3.5rem',
@@ -250,39 +276,142 @@ const styles = {
     border: '2px solid rgba(255, 255, 255, 0.3)',
     backdropFilter: 'blur(10px)',
   },
+  userPhoto: {
+    width: '3.5rem',
+    height: '3.5rem',
+    borderRadius: '50%',
+    objectFit: 'cover',
+    border: '3px solid rgba(255, 255, 255, 0.9)',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.3)',
+  },
   cardTitle: {
-    fontSize: '1.5rem',
-    fontWeight: '800',
+    fontSize: '1.75rem',
+    fontWeight: '900',
     margin: '0 0 0.25rem 0',
-    letterSpacing: '0.1em',
+    letterSpacing: '0.15em',
     textTransform: 'uppercase',
+    color: '#ffffff',
   },
   cardSubtitle: {
-    fontSize: '0.875rem',
+    fontSize: '0.75rem',
     margin: 0,
-    opacity: 0.95,
-    fontWeight: '400',
+    fontWeight: '600',
+    letterSpacing: '0.1em',
+    color: 'rgba(255, 255, 255, 0.9)',
+  },
+  validityBadge: {
+    backgroundColor: '#059669',
+    color: '#ffffff',
+    padding: '0.375rem 0.875rem',
+    borderRadius: '0.25rem',
+    fontSize: '0.75rem',
+    fontWeight: '800',
+    letterSpacing: '0.1em',
   },
   cardNumber: {
     fontSize: '0.875rem',
     fontWeight: '700',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    padding: '0.5rem 1rem',
-    borderRadius: '0.5rem',
-    letterSpacing: '0.05em',
-    border: '1px solid rgba(255, 255, 255, 0.3)',
-    backdropFilter: 'blur(10px)',
+    letterSpacing: '0.1em',
+    color: '#ffffff',
   },
   cardBody: {
-    padding: '1.5rem',
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))',
-    gap: '1.5rem',
+    padding: '2.5rem 2rem',
+    backgroundColor: '#ffffff',
   },
-  cardInfo: {
+  mainContent: {
+    display: 'flex',
+    gap: '2.5rem',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+  },
+  photoSection: {
     display: 'flex',
     flexDirection: 'column',
+    alignItems: 'center',
+    gap: '0.5rem',
+  },
+  photoLabel: {
+    fontSize: '0.75rem',
+    fontWeight: '700',
+    color: '#6b7280',
+    letterSpacing: '0.1em',
+  },
+  userPhotoLarge: {
+    width: '140px',
+    height: '180px',
+    objectFit: 'cover',
+    border: '3px solid #1a365d',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+  },
+  userPhotoPlaceholder: {
+    width: '140px',
+    height: '180px',
+    backgroundColor: '#f3f4f6',
+    border: '3px solid #1a365d',
+    color: '#6b7280',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '4rem',
+    fontWeight: '800',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+  },
+  dataSection: {
+    flex: 1,
+    minWidth: '350px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.25rem',
+  },
+  dataRow: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
     gap: '1.5rem',
+    paddingBottom: '1rem',
+    borderBottom: '1px solid #e5e7eb',
+  },
+  dataField: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.375rem',
+  },
+  fieldLabel: {
+    fontSize: '0.6875rem',
+    fontWeight: '700',
+    color: '#6b7280',
+    letterSpacing: '0.1em',
+    textTransform: 'uppercase',
+  },
+  fieldValue: {
+    fontSize: '0.9375rem',
+    fontWeight: '600',
+    color: '#111827',
+    margin: 0,
+    lineHeight: '1.4',
+  },
+  statusBadgeOAB: {
+    display: 'inline-block',
+    padding: '0.375rem 1rem',
+    fontSize: '0.8125rem',
+    fontWeight: '700',
+    letterSpacing: '0.05em',
+    textTransform: 'uppercase',
+    border: '2px solid',
+  },
+  statusActiveOAB: {
+    backgroundColor: '#d1fae5',
+    color: '#065f46',
+    borderColor: '#059669',
+  },
+  statusWarningOAB: {
+    backgroundColor: '#fef3c7',
+    color: '#92400e',
+    borderColor: '#f59e0b',
+  },
+  statusInactiveOAB: {
+    backgroundColor: '#f3f4f6',
+    color: '#4b5563',
+    borderColor: '#9ca3af',
   },
   infoGroup: {
     display: 'flex',

@@ -193,7 +193,7 @@ const styles = {
     letterSpacing: '0.05em',
   },
   buttonDisabled: {
-    backgroundColor: '#9ca3af',
+    background: '#9ca3af',
     cursor: 'not-allowed',
     opacity: 0.6,
   },

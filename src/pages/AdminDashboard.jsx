@@ -465,11 +465,6 @@ const styles = {
     padding: '3rem 2rem',
     textAlign: 'center',
   },
-  emptyText: {
-    color: '#6b7280',
-    fontSize: '0.875rem',
-    margin: 0,
-  },
   infoMessage: {
     display: 'flex',
     alignItems: 'center',

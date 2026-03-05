@@ -1,5 +1,8 @@
 import axios from 'axios';
 
+// URL base da API - usado para imagens e requisições
+export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 const api = axios.create({
   baseURL: '/api/v1',
   withCredentials: true,
