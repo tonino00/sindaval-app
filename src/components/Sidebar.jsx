@@ -1,8 +1,16 @@
-import { NavLink } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { logout } from '../features/auth/authSlice';
 
 const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
   const { user } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await dispatch(logout());
+    navigate('/login');
+  };
 
   const links = [
     { to: '/dashboard', label: 'Dashboard', roles: ['SINDICALIZADO', 'FINANCEIRO'] },
@@ -30,6 +38,23 @@ const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
         ...(isOpen ? styles.sidebarOpen : styles.sidebarClosed),
       }}
     >
+      <div style={styles.userSection}>
+        <div style={styles.userAvatar}>
+          {user?.nomeCompleto?.charAt(0).toUpperCase()}
+        </div>
+        <div style={styles.userInfo}>
+          <span style={styles.userName}>{user?.nomeCompleto}</span>
+          <span style={styles.userRole}>
+            {user?.role === 'ADMIN' && 'Administrador'}
+            {user?.role === 'FINANCEIRO' && 'Financeiro'}
+            {user?.role === 'SINDICALIZADO' && 'Sindicalizado'}
+          </span>
+        </div>
+        <button onClick={handleLogout} style={styles.logoutButton}>
+          Sair
+        </button>
+      </div>
+      <div style={styles.divider} />
       <nav style={styles.nav}>
         {filteredLinks.map((link) => (
           <NavLink
@@ -56,7 +81,7 @@ const styles = {
     maxWidth: '260px',
     backgroundColor: '#ffffff',
     borderRight: '1px solid #e5e7eb',
-    padding: '1rem 0',
+    padding: 0,
     flexShrink: 0,
     transition: 'transform 0.3s ease-in-out',
     position: 'fixed',
@@ -65,7 +90,61 @@ const styles = {
     bottom: 0,
     zIndex: 1000,
     overflowY: 'auto',
-    paddingTop: '4.5rem',
+    paddingTop: '4rem',
+  },
+  userSection: {
+    padding: '1.5rem 1rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.75rem',
+    alignItems: 'center',
+  },
+  userAvatar: {
+    width: '3.5rem',
+    height: '3.5rem',
+    borderRadius: '50%',
+    backgroundColor: '#1a365d',
+    color: '#ffffff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '1.5rem',
+    fontWeight: '700',
+  },
+  userInfo: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '0.25rem',
+    textAlign: 'center',
+  },
+  userName: {
+    fontSize: '0.9375rem',
+    fontWeight: '600',
+    color: '#111827',
+  },
+  userRole: {
+    fontSize: '0.8125rem',
+    color: '#6b7280',
+    fontWeight: '500',
+  },
+  logoutButton: {
+    width: '100%',
+    padding: '0.625rem 1rem',
+    backgroundColor: '#dc2626',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '0.5rem',
+    cursor: 'pointer',
+    fontSize: '0.875rem',
+    fontWeight: '600',
+    transition: 'all 0.2s',
+    marginTop: '0.5rem',
+  },
+  divider: {
+    height: '1px',
+    backgroundColor: '#e5e7eb',
+    margin: '0 1rem',
   },
   sidebarOpen: {
     transform: 'translateX(0)',
