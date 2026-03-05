@@ -1,0 +1,81 @@
+import { Routes, Route, Navigate } from 'react-router-dom';
+
+import ProtectedRoute from './routes/ProtectedRoute';
+import RoleGuard from './routes/RoleGuard';
+
+import Layout from './components/Layout';
+import RoleBasedRedirect from './components/RoleBasedRedirect';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import Notifications from './pages/Notifications';
+import Admin from './pages/Admin';
+import Profile from './pages/Profile';
+import Payments from './pages/Payments';
+import DigitalCard from './pages/DigitalCard';
+import Agreements from './pages/Agreements';
+import ManageAgreements from './pages/ManageAgreements';
+import AdminDashboard from './pages/AdminDashboard';
+import Reports from './pages/Reports';
+import Checkout from './pages/Checkout';
+import PaymentSuccess from './pages/PaymentSuccess';
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<RoleBasedRedirect />} />
+        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="profile" element={<Profile />} />
+        <Route path="payments" element={<Payments />} />
+        <Route path="checkout" element={<Checkout />} />
+        <Route path="payment-success" element={<PaymentSuccess />} />
+        <Route path="digital-card" element={<DigitalCard />} />
+        <Route path="agreements" element={<Agreements />} />
+        <Route path="notifications" element={<Notifications />} />
+        <Route
+          path="admin"
+          element={
+            <RoleGuard allowedRoles={['ADMIN']}>
+              <Admin />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="admin/dashboard"
+          element={
+            <RoleGuard allowedRoles={['ADMIN']}>
+              <AdminDashboard />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="admin/agreements"
+          element={
+            <RoleGuard allowedRoles={['ADMIN']}>
+              <ManageAgreements />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="admin/reports"
+          element={
+            <RoleGuard allowedRoles={['ADMIN']}>
+              <Reports />
+            </RoleGuard>
+          }
+        />
+      </Route>
+    </Routes>
+  );
+}
+
+export default App;
