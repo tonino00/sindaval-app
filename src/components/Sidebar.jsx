@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
   const { user } = useSelector((state) => state.auth);
 
   const links = [
@@ -23,13 +23,20 @@ const Sidebar = () => {
   );
 
   return (
-    <aside style={styles.sidebar}>
+    <aside
+      className="app-sidebar"
+      style={{
+        ...styles.sidebar,
+        ...(isOpen ? styles.sidebarOpen : styles.sidebarClosed),
+      }}
+    >
       <nav style={styles.nav}>
         {filteredLinks.map((link) => (
           <NavLink
             key={link.to}
             to={link.to}
             end
+            onClick={onClose}
             style={({ isActive }) => ({
               ...styles.link,
               ...(isActive ? styles.linkActive : {}),
@@ -51,6 +58,20 @@ const styles = {
     borderRight: '1px solid #e5e7eb',
     padding: '1rem 0',
     flexShrink: 0,
+    transition: 'transform 0.3s ease-in-out',
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    zIndex: 1000,
+    overflowY: 'auto',
+    paddingTop: '4.5rem',
+  },
+  sidebarOpen: {
+    transform: 'translateX(0)',
+  },
+  sidebarClosed: {
+    transform: 'translateX(-100%)',
   },
   nav: {
     display: 'flex',
