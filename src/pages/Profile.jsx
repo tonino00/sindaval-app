@@ -347,6 +347,14 @@ const Profile = () => {
                 </span>
               </div>
             )}
+            {user?.createdAt && (
+              <div style={styles.infoRow}>
+                <span style={styles.infoLabel}>Membro desde:</span>
+                <span style={styles.infoValue}>
+                  {new Date(user.createdAt).toLocaleDateString('pt-BR')}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -406,6 +414,22 @@ const Profile = () => {
               </span>
             </div>
           </div>
+
+          {user?.createdAt && (
+            <div style={styles.accountCard}>
+              <div style={styles.accountCardHeader}>
+                <div style={styles.accountCardIcon}>📅</div>
+                <span style={styles.accountCardLabel}>Membro desde</span>
+              </div>
+              <p style={styles.accountCardValue}>
+                {new Date(user.createdAt).toLocaleDateString('pt-BR', { 
+                  day: '2-digit', 
+                  month: 'long', 
+                  year: 'numeric' 
+                })}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

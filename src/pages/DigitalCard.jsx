@@ -123,6 +123,18 @@ const DigitalCard = () => {
                       {user?.status}
                     </span>
                   </div>
+                  {user?.createdAt && (
+                    <div style={styles.dataField}>
+                      <label style={styles.fieldLabel}>MEMBRO DESDE</label>
+                      <p style={styles.fieldValue}>
+                        {new Date(user.createdAt).toLocaleDateString('pt-BR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
