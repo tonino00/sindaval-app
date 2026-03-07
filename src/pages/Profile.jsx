@@ -26,10 +26,14 @@ const Profile = () => {
   const { user } = useSelector((state) => state.auth);
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [loadingPassword, setLoadingPassword] = useState(false);
+  const [loadingPhoto, setLoadingPhoto] = useState(false);
   const [errorProfile, setErrorProfile] = useState(null);
   const [errorPassword, setErrorPassword] = useState(null);
+  const [errorPhoto, setErrorPhoto] = useState(null);
   const [successProfile, setSuccessProfile] = useState(null);
   const [successPassword, setSuccessPassword] = useState(null);
+  const [successPhoto, setSuccessPhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
 
   const {
     register: registerProfile,
@@ -95,6 +99,50 @@ const Profile = () => {
     }
   };
 
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setErrorPhoto('Por favor, selecione uma imagem válida');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorPhoto('A imagem deve ter no máximo 5MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+
+    setLoadingPhoto(true);
+    setErrorPhoto(null);
+    setSuccessPhoto(null);
+
+    const formData = new FormData();
+    formData.append('foto', file);
+
+    try {
+      await api.patch('/users/me/photo', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      setSuccessPhoto('Foto atualizada com sucesso!');
+      await dispatch(getProfile());
+      setTimeout(() => setPhotoPreview(null), 2000);
+    } catch (err) {
+      setErrorPhoto(err.response?.data?.message || 'Erro ao atualizar foto');
+      setPhotoPreview(null);
+    } finally {
+      setLoadingPhoto(false);
+    }
+  };
+
   return (
     <div style={styles.container}>
       <div style={styles.header}>
@@ -107,7 +155,43 @@ const Profile = () => {
       <div style={styles.grid}>
         <div style={styles.section}>
           <div style={styles.sectionHeader}>
-            <div style={styles.sectionIcon}>👤</div>
+            <div style={styles.sectionIcon}>�</div>
+            <h2 style={styles.sectionTitle}>Foto de Perfil</h2>
+          </div>
+          <div style={styles.photoSection}>
+            <div style={styles.photoPreview}>
+              {photoPreview ? (
+                <img src={photoPreview} alt="Preview" style={styles.photoImage} />
+              ) : user?.fotoUrl ? (
+                <img src={API_URL + user.fotoUrl} alt={user.nomeCompleto} style={styles.photoImage} />
+              ) : (
+                <div style={styles.photoPlaceholder}>
+                  {user?.nomeCompleto?.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
+            <div style={styles.photoActions}>
+              <label htmlFor="photo-upload" style={styles.photoButton}>
+                {loadingPhoto ? 'Enviando...' : 'Escolher Foto'}
+              </label>
+              <input
+                id="photo-upload"
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                style={styles.photoInput}
+                disabled={loadingPhoto}
+              />
+              <p style={styles.photoHint}>JPG, PNG ou GIF (máx. 5MB)</p>
+            </div>
+          </div>
+          {errorPhoto && <div style={styles.errorBox}>{errorPhoto}</div>}
+          {successPhoto && <div style={styles.successBox}>{successPhoto}</div>}
+        </div>
+
+        <div style={styles.section}>
+          <div style={styles.sectionHeader}>
+            <div style={styles.sectionIcon}>�</div>
             <h2 style={styles.sectionTitle}>Informações Pessoais</h2>
           </div>
           <form onSubmit={handleSubmitProfile(onSubmitProfile)} style={styles.form}>
@@ -223,6 +307,44 @@ const Profile = () => {
               {loadingPassword ? 'Alterando...' : 'Alterar Senha'}
             </button>
           </form>
+        </div>
+
+        <div style={styles.section}>
+          <div style={styles.sectionHeader}>
+            <div style={styles.sectionIcon}>📋</div>
+            <h2 style={styles.sectionTitle}>Status da Associação</h2>
+          </div>
+          <div style={styles.infoBox}>
+            <div style={styles.infoRow}>
+              <span style={styles.infoLabel}>Status:</span>
+              <span
+                style={{
+                  ...styles.statusBadge,
+                  ...(user?.status === 'ATIVO' ? styles.statusActive : {}),
+                  ...(user?.status === 'INADIMPLENTE' ? styles.statusWarning : {}),
+                  ...(user?.status === 'INATIVO' ? styles.statusInactive : {}),
+                }}
+              >
+                {user?.status || 'N/A'}
+              </span>
+            </div>
+            <div style={styles.infoRow}>
+              <span style={styles.infoLabel}>Perfil:</span>
+              <span style={styles.infoValue}>
+                {user?.role === 'ADMIN' && 'Administrador'}
+                {user?.role === 'FINANCEIRO' && 'Financeiro'}
+                {user?.role === 'SINDICALIZADO' && 'Sindicalizado'}
+              </span>
+            </div>
+            {user?.dataVencimento && (
+              <div style={styles.infoRow}>
+                <span style={styles.infoLabel}>Vencimento:</span>
+                <span style={styles.infoValue}>
+                  {new Date(user.dataVencimento).toLocaleDateString('pt-BR')}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -393,11 +515,88 @@ const styles = {
     color: '#dc2626',
     fontWeight: '500',
   },
-  infoBox: {
+  photoSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '1.5rem',
     padding: '1rem',
+  },
+  photoPreview: {
+    width: '150px',
+    height: '150px',
+    borderRadius: '50%',
+    overflow: 'hidden',
+    border: '4px solid #1a365d',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+  },
+  photoImage: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+  },
+  photoPlaceholder: {
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1a365d',
+    color: '#ffffff',
+    fontSize: '3rem',
+    fontWeight: '700',
+  },
+  photoActions: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '0.5rem',
+  },
+  photoButton: {
+    padding: '0.75rem 1.5rem',
+    backgroundColor: '#1a365d',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '0.5rem',
+    fontSize: '0.875rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  },
+  photoInput: {
+    display: 'none',
+  },
+  photoHint: {
+    fontSize: '0.75rem',
+    color: '#6b7280',
+    margin: 0,
+    textAlign: 'center',
+  },
+  infoBox: {
+    padding: '1.5rem',
     backgroundColor: '#f9fafb',
     borderRadius: '0.5rem',
     border: '1px solid #e5e7eb',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem',
+  },
+  infoRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '0.75rem 0',
+    borderBottom: '1px solid #e5e7eb',
+  },
+  infoLabel: {
+    fontSize: '0.875rem',
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  infoValue: {
+    fontSize: '0.875rem',
+    fontWeight: '500',
+    color: '#374151',
   },
   infoText: {
     fontSize: '0.875rem',

@@ -9,6 +9,7 @@ import RoleGuard from './routes/RoleGuard';
 import Layout from './components/Layout';
 import RoleBasedRedirect from './components/RoleBasedRedirect';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Notifications from './pages/Notifications';
 import Admin from './pages/Admin';
@@ -42,6 +43,7 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
 
       <Route
         path="/"

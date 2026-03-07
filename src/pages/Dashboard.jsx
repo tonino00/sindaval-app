@@ -1,9 +1,42 @@
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import api from '../services/api';
 
 const Dashboard = () => {
   const { user } = useSelector((state) => state.auth);
   const navigate = useNavigate();
+  const [payments, setPayments] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [loadingPayments, setLoadingPayments] = useState(true);
+  const [loadingNotifications, setLoadingNotifications] = useState(true);
+
+  useEffect(() => {
+    const fetchPayments = async () => {
+      try {
+        const response = await api.get('/payments/me');
+        setPayments(response.data.slice(0, 3));
+      } catch (error) {
+        console.error('Erro ao buscar pagamentos:', error);
+      } finally {
+        setLoadingPayments(false);
+      }
+    };
+
+    const fetchNotifications = async () => {
+      try {
+        const response = await api.get('/notifications/me/notifications');
+        setNotifications(response.data.slice(0, 3));
+      } catch (error) {
+        console.error('Erro ao buscar notificações:', error);
+      } finally {
+        setLoadingNotifications(false);
+      }
+    };
+
+    fetchPayments();
+    fetchNotifications();
+  }, []);
 
   return (
     <div style={styles.container}>
@@ -49,11 +82,105 @@ const Dashboard = () => {
           </p>
         </div>
 
-        <div style={styles.card}>
-          <h3 style={styles.cardTitle}>ID do Usuário</h3>
-          <p style={{ ...styles.cardText, fontSize: '12px', wordBreak: 'break-all' }}>
-            {user?.id}
-          </p>
+        {user?.dataVencimento && (
+          <div style={styles.card}>
+            <h3 style={styles.cardTitle}>Data de Vencimento</h3>
+            <p style={styles.cardText}>
+              {new Date(user.dataVencimento).toLocaleDateString('pt-BR')}
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div style={styles.recentSection}>
+        <div style={styles.recentCard}>
+          <div style={styles.recentHeader}>
+            <h2 style={styles.recentTitle}>💳 Últimos Pagamentos</h2>
+            <button onClick={() => navigate('/payments')} style={styles.viewAllButton}>
+              Ver todos
+            </button>
+          </div>
+          {loadingPayments ? (
+            <p style={styles.loadingText}>Carregando...</p>
+          ) : payments.length > 0 ? (
+            <div style={styles.listContainer}>
+              {payments.map((payment) => (
+                <div key={payment.id} style={styles.listItem}>
+                  <div style={styles.listItemContent}>
+                    <div style={styles.listItemIcon}>
+                      {payment.status === 'APROVADO' && '✅'}
+                      {payment.status === 'PENDENTE' && '⏳'}
+                      {payment.status === 'CANCELADO' && '❌'}
+                    </div>
+                    <div style={styles.listItemInfo}>
+                      <p style={styles.listItemTitle}>
+                        {payment.metodoPagamento === 'CARTAO' ? 'Cartão de Crédito' : 'PIX'}
+                      </p>
+                      <p style={styles.listItemSubtitle}>
+                        {new Date(payment.createdAt).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                  </div>
+                  <div style={styles.listItemRight}>
+                    <p style={styles.listItemAmount}>
+                      R$ {payment.valor?.toFixed(2)}
+                    </p>
+                    <span
+                      style={{
+                        ...styles.listItemBadge,
+                        ...(payment.status === 'APROVADO' ? styles.statusActive : {}),
+                        ...(payment.status === 'PENDENTE' ? styles.statusWarning : {}),
+                        ...(payment.status === 'CANCELADO' ? styles.statusInactive : {}),
+                      }}
+                    >
+                      {payment.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={styles.emptyText}>Nenhum pagamento encontrado</p>
+          )}
+        </div>
+
+        <div style={styles.recentCard}>
+          <div style={styles.recentHeader}>
+            <h2 style={styles.recentTitle}>🔔 Últimas Notificações</h2>
+            <button onClick={() => navigate('/notifications')} style={styles.viewAllButton}>
+              Ver todas
+            </button>
+          </div>
+          {loadingNotifications ? (
+            <p style={styles.loadingText}>Carregando...</p>
+          ) : notifications.length > 0 ? (
+            <div style={styles.listContainer}>
+              {notifications.map((notification) => (
+                <div key={notification.id} style={styles.listItem}>
+                  <div style={styles.listItemContent}>
+                    <div style={styles.listItemIcon}>
+                      {notification.tipo === 'GERAL' && '📢'}
+                      {notification.tipo === 'INDIVIDUAL' && '👤'}
+                      {notification.tipo === 'URGENTE' && '⚠️'}
+                    </div>
+                    <div style={styles.listItemInfo}>
+                      <p style={styles.listItemTitle}>{notification.titulo}</p>
+                      <p style={styles.listItemSubtitle}>
+                        {new Date(notification.createdAt).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                  </div>
+                  <div style={styles.listItemRight}>
+                    {!notification.lida && (
+                      <span style={styles.unreadBadge}>Nova</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p style={styles.emptyText}>Nenhuma notificação encontrada</p>
+          )}
         </div>
       </div>
 
@@ -226,6 +353,126 @@ const styles = {
     color: '#1e40af',
     fontSize: '0.875rem',
     lineHeight: '1.5',
+  },
+  recentSection: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 450px), 1fr))',
+    gap: '1.5rem',
+    marginBottom: '2rem',
+  },
+  recentCard: {
+    backgroundColor: '#ffffff',
+    padding: '1.5rem',
+    borderRadius: '1rem',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+    border: '1px solid #e5e7eb',
+  },
+  recentHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '1.25rem',
+    paddingBottom: '1rem',
+    borderBottom: '2px solid #f3f4f6',
+  },
+  recentTitle: {
+    fontSize: '1.125rem',
+    fontWeight: '700',
+    color: '#111827',
+    margin: 0,
+  },
+  viewAllButton: {
+    padding: '0.5rem 1rem',
+    backgroundColor: 'transparent',
+    color: '#1a365d',
+    border: '1px solid #1a365d',
+    borderRadius: '0.5rem',
+    fontSize: '0.875rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  },
+  listContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.75rem',
+  },
+  listItem: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '1rem',
+    backgroundColor: '#f9fafb',
+    borderRadius: '0.5rem',
+    border: '1px solid #e5e7eb',
+    transition: 'all 0.2s',
+  },
+  listItemContent: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+    flex: 1,
+  },
+  listItemIcon: {
+    fontSize: '1.5rem',
+    flexShrink: 0,
+  },
+  listItemInfo: {
+    flex: 1,
+  },
+  listItemTitle: {
+    fontSize: '0.9375rem',
+    fontWeight: '600',
+    color: '#111827',
+    margin: '0 0 0.25rem 0',
+  },
+  listItemSubtitle: {
+    fontSize: '0.8125rem',
+    color: '#6b7280',
+    margin: 0,
+  },
+  listItemRight: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: '0.5rem',
+  },
+  listItemAmount: {
+    fontSize: '1rem',
+    fontWeight: '700',
+    color: '#111827',
+    margin: 0,
+  },
+  listItemBadge: {
+    display: 'inline-block',
+    padding: '0.25rem 0.75rem',
+    borderRadius: '9999px',
+    fontSize: '0.6875rem',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  unreadBadge: {
+    display: 'inline-block',
+    padding: '0.25rem 0.75rem',
+    borderRadius: '9999px',
+    fontSize: '0.6875rem',
+    fontWeight: '600',
+    backgroundColor: '#dbeafe',
+    color: '#1e40af',
+  },
+  loadingText: {
+    fontSize: '0.875rem',
+    color: '#6b7280',
+    textAlign: 'center',
+    padding: '2rem',
+    margin: 0,
+  },
+  emptyText: {
+    fontSize: '0.875rem',
+    color: '#6b7280',
+    textAlign: 'center',
+    padding: '2rem',
+    margin: 0,
   },
 };
 

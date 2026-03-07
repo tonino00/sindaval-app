@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { login, clearError } from '../features/auth/authSlice';
 
 const loginSchema = z.object({
@@ -95,6 +95,15 @@ const Login = () => {
           >
             {loading ? 'Entrando...' : 'Entrar'}
           </button>
+
+          <div style={styles.footer}>
+            <p style={styles.footerText}>
+              Não tem uma conta?{' '}
+              <Link to="/register" style={styles.link}>
+                Criar conta
+              </Link>
+            </p>
+          </div>
         </form>
       </div>
     </div>
@@ -193,9 +202,21 @@ const styles = {
     letterSpacing: '0.05em',
   },
   buttonDisabled: {
-    background: '#9ca3af',
-    cursor: 'not-allowed',
     opacity: 0.6,
+    cursor: 'not-allowed',
+  },
+  footer: {
+    marginTop: '1.5rem',
+    textAlign: 'center',
+  },
+  footerText: {
+    fontSize: '0.875rem',
+    color: '#6b7280',
+  },
+  link: {
+    color: '#1a365d',
+    fontWeight: '600',
+    textDecoration: 'none',
   },
 };
 
