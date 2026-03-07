@@ -4,11 +4,11 @@ import axios from 'axios';
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const api = axios.create({
-  baseURL: '/api/v1',
-  withCredentials: true,
+  baseURL: `${API_URL}/api/v1`,
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Envia cookies automaticamente
 });
 
 api.interceptors.response.use(

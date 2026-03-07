@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../features/auth/authSlice';
+import { API_URL } from '../services/api';
 
 const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
   const { user } = useSelector((state) => state.auth);
@@ -39,9 +40,17 @@ const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
       }}
     >
       <div style={styles.userSection}>
-        <div style={styles.userAvatar}>
-          {user?.nomeCompleto?.charAt(0).toUpperCase()}
-        </div>
+        {user?.fotoUrl ? (
+          <img 
+            src={API_URL + user.fotoUrl} 
+            alt={user.nomeCompleto}
+            style={styles.userAvatarImage}
+          />
+        ) : (
+          <div style={styles.userAvatar}>
+            {user?.nomeCompleto?.charAt(0).toUpperCase()}
+          </div>
+        )}
         <div style={styles.userInfo}>
           <span style={styles.userName}>{user?.nomeCompleto}</span>
           <span style={styles.userRole}>
@@ -110,6 +119,14 @@ const styles = {
     justifyContent: 'center',
     fontSize: '1.5rem',
     fontWeight: '700',
+  },
+  userAvatarImage: {
+    width: '3.5rem',
+    height: '3.5rem',
+    borderRadius: '50%',
+    objectFit: 'cover',
+    border: '3px solid #1a365d',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
   },
   userInfo: {
     display: 'flex',

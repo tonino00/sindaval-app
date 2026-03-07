@@ -7,6 +7,7 @@ const initialState = {
   isAuthenticated: false,
   loading: false,
   error: null,
+  initialized: false, // Flag para controlar se verificação inicial foi feita
 };
 
 const decodeUser = (user) => {
@@ -135,9 +136,20 @@ const authSlice = createSlice({
         state.user = null;
         state.error = null;
       })
+      .addCase(getProfile.pending, (state) => {
+        state.loading = true;
+      })
       .addCase(getProfile.fulfilled, (state, action) => {
+        state.loading = false;
         state.user = action.payload;
         state.isAuthenticated = true;
+        state.initialized = true;
+      })
+      .addCase(getProfile.rejected, (state) => {
+        state.loading = false;
+        state.isAuthenticated = false;
+        state.user = null;
+        state.initialized = true;
       });
   },
 });

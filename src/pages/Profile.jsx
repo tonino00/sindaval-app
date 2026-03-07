@@ -50,10 +50,6 @@ const Profile = () => {
   });
 
   useEffect(() => {
-    dispatch(getProfile());
-  }, [dispatch]);
-
-  useEffect(() => {
     if (user) {
       resetProfile({
         nomeCompleto: user.nomeCompleto || '',
@@ -61,7 +57,8 @@ const Profile = () => {
         numeroOAB: user.numeroOAB || '',
       });
     }
-  }, [user, resetProfile]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const onSubmitProfile = async (data) => {
     setLoadingProfile(true);
@@ -104,17 +101,6 @@ const Profile = () => {
         <div>
           <h1 style={styles.title}>Meu Perfil</h1>
           <p style={styles.subtitle}>Gerencie suas informações pessoais e segurança</p>
-        </div>
-        <div style={styles.headerBadge}>
-          {user?.fotoUrl ? (
-            <img 
-              src={API_URL + user.fotoUrl} 
-              alt={user.nomeCompleto}
-              style={styles.userAvatarImage}
-            />
-          ) : (
-            <div style={styles.userAvatar}>{user?.nomeCompleto?.charAt(0).toUpperCase()}</div>
-          )}
         </div>
       </div>
 

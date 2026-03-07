@@ -1,4 +1,7 @@
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { getProfile } from './features/auth/authSlice';
 
 import ProtectedRoute from './routes/ProtectedRoute';
 import RoleGuard from './routes/RoleGuard';
@@ -20,6 +23,22 @@ import Checkout from './pages/Checkout';
 import PaymentSuccess from './pages/PaymentSuccess';
 
 function App() {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    // Verificar autenticação no carregamento da app
+    const checkAuth = async () => {
+      try {
+        await dispatch(getProfile()).unwrap();
+      } catch (error) {
+        // Usuário não autenticado - silencioso
+        console.log('Usuário não autenticado');
+      }
+    };
+
+    checkAuth();
+  }, [dispatch]);
+
   return (
     <Routes>
       <Route path="/login" element={<Login />} />

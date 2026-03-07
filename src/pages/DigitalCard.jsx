@@ -11,9 +11,9 @@ const DigitalCard = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    dispatch(getProfile());
     generateQRCode();
-  }, [dispatch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const generateQRCode = async () => {
     try {
