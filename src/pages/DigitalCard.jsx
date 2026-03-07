@@ -329,12 +329,14 @@ const styles = {
   cardBody: {
     padding: '2.5rem 2rem',
     backgroundColor: '#ffffff',
+    overflowX: 'hidden',
   },
   mainContent: {
     display: 'flex',
-    gap: '2.5rem',
+    gap: '2rem',
     alignItems: 'flex-start',
     flexWrap: 'wrap',
+    width: '100%',
   },
   photoSection: {
     display: 'flex',
@@ -370,15 +372,15 @@ const styles = {
   },
   dataSection: {
     flex: 1,
-    minWidth: '350px',
+    minWidth: '280px',
     display: 'flex',
     flexDirection: 'column',
     gap: '1.25rem',
   },
   dataRow: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '1.5rem',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+    gap: '1rem',
     paddingBottom: '1rem',
     borderBottom: '1px solid #e5e7eb',
   },
@@ -400,6 +402,8 @@ const styles = {
     color: '#111827',
     margin: 0,
     lineHeight: '1.4',
+    wordWrap: 'break-word',
+    overflowWrap: 'break-word',
   },
   statusBadgeOAB: {
     display: 'inline-block',
