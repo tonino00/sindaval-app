@@ -127,15 +127,18 @@ const Profile = () => {
     formData.append('foto', file);
 
     try {
-      await api.patch('/users/me/photo', formData, {
+      const response = await api.patch('/users/me', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
+      console.log('Resposta do upload:', response.data);
       setSuccessPhoto('Foto atualizada com sucesso!');
-      await dispatch(getProfile());
-      setTimeout(() => setPhotoPreview(null), 2000);
+      const profileResult = await dispatch(getProfile());
+      console.log('Dados do perfil após upload:', profileResult.payload);
+      setPhotoPreview(null); // Limpa preview para mostrar foto do servidor
     } catch (err) {
+      console.error('Erro no upload:', err);
       setErrorPhoto(err.response?.data?.message || 'Erro ao atualizar foto');
       setPhotoPreview(null);
     } finally {
