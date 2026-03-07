@@ -19,6 +19,7 @@ import DigitalCard from './pages/DigitalCard';
 import Agreements from './pages/Agreements';
 import ManageAgreements from './pages/ManageAgreements';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminPayments from './pages/AdminPayments';
 import Reports from './pages/Reports';
 import Checkout from './pages/Checkout';
 import PaymentSuccess from './pages/PaymentSuccess';
@@ -28,16 +29,22 @@ function App() {
 
   useEffect(() => {
     // Verificar autenticação no carregamento da app
-    const checkAuth = async () => {
-      try {
-        await dispatch(getProfile()).unwrap();
-      } catch (error) {
-        // Usuário não autenticado - silencioso
-        console.log('Usuário não autenticado');
-      }
-    };
+    // Não verificar se estiver nas páginas públicas
+    const isPublicRoute = window.location.pathname === '/login' || 
+                          window.location.pathname === '/register';
+    
+    if (!isPublicRoute) {
+      const checkAuth = async () => {
+        try {
+          await dispatch(getProfile()).unwrap();
+        } catch (error) {
+          // Usuário não autenticado - silencioso
+          console.log('Usuário não autenticado');
+        }
+      };
 
-    checkAuth();
+      checkAuth();
+    }
   }, [dispatch]);
 
   return (
@@ -91,6 +98,14 @@ function App() {
           element={
             <RoleGuard allowedRoles={['ADMIN']}>
               <Reports />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="admin/payments"
+          element={
+            <RoleGuard allowedRoles={['ADMIN']}>
+              <AdminPayments />
             </RoleGuard>
           }
         />

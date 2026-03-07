@@ -31,6 +31,10 @@ const Admin = () => {
   const [successNotification, setSuccessNotification] = useState(null);
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('TODOS');
+  const [notifications, setNotifications] = useState([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
 
   const {
     register: registerNotification,
@@ -63,6 +67,7 @@ const Admin = () => {
 
   useEffect(() => {
     fetchUsers();
+    fetchNotifications();
   }, []);
 
   const fetchUsers = async () => {
@@ -152,6 +157,77 @@ const Admin = () => {
       setError('Erro ao excluir usuário');
     }
   };
+
+  const handleToggleStatus = async (userId, currentStatus) => {
+    const newStatus = currentStatus === 'ATIVO' ? 'INATIVO' : 'ATIVO';
+    
+    if (!window.confirm(`Tem certeza que deseja alterar o status para ${newStatus}?`)) return;
+
+    try {
+      await api.patch(`/users/${userId}`, { status: newStatus });
+      setSuccess(`Status alterado para ${newStatus} com sucesso!`);
+      await fetchUsers();
+    } catch (err) {
+      setError('Erro ao alterar status');
+    }
+  };
+
+  const handleChangeRole = async (userId, newRole) => {
+    if (!window.confirm(`Tem certeza que deseja alterar o perfil para ${newRole}?`)) return;
+
+    try {
+      await api.patch(`/users/${userId}`, { role: newRole });
+      setSuccess(`Perfil alterado para ${newRole} com sucesso!`);
+      await fetchUsers();
+    } catch (err) {
+      setError('Erro ao alterar perfil');
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      setLoadingNotifications(true);
+      const response = await api.get('/notifications');
+      setNotifications(response.data);
+    } catch (err) {
+      console.error('Erro ao carregar notificações:', err);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  };
+
+  const handleBlockUser = async (userId, isBlocked) => {
+    const action = isBlocked ? 'desbloquear' : 'bloquear';
+    
+    if (!window.confirm(`Tem certeza que deseja ${action} este usuário?`)) return;
+
+    try {
+      await api.patch(`/users/${userId}`, { bloqueado: !isBlocked });
+      setSuccess(`Usuário ${action}ado com sucesso!`);
+      await fetchUsers();
+    } catch (err) {
+      setError(`Erro ao ${action} usuário`);
+    }
+  };
+
+  const handleDeleteNotification = async (notificationId) => {
+    if (!window.confirm('Tem certeza que deseja excluir esta notificação?')) return;
+
+    try {
+      await api.delete(`/notifications/${notificationId}`);
+      setSuccessNotification('Notificação excluída com sucesso!');
+      await fetchNotifications();
+    } catch (err) {
+      setErrorNotification('Erro ao excluir notificação');
+    }
+  };
+
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = user.nomeCompleto.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'TODOS' || user.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div style={styles.container}>
@@ -377,12 +453,43 @@ const Admin = () => {
           <div style={styles.sectionIcon}>👥</div>
           <h2 style={styles.sectionTitle}>Lista de Usuários</h2>
         </div>
+        
+        <div style={styles.filterSection}>
+          <div style={styles.searchContainer}>
+            <input
+              type="text"
+              placeholder="🔍 Buscar por nome ou email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={styles.searchInput}
+            />
+          </div>
+          <div style={styles.filterContainer}>
+            <label style={styles.filterLabel}>Filtrar por status:</label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              style={styles.filterSelect}
+            >
+              <option value="TODOS">Todos</option>
+              <option value="ATIVO">Ativo</option>
+              <option value="INADIMPLENTE">Inadimplente</option>
+              <option value="INATIVO">Inativo</option>
+            </select>
+          </div>
+          <div style={styles.resultCount}>
+            <span style={styles.resultText}>
+              {filteredUsers.length} usuário(s) encontrado(s)
+            </span>
+          </div>
+        </div>
+
         {loading ? (
           <div style={styles.loadingState}>
             <div style={styles.loadingSpinner}>⏳</div>
             <p style={styles.loadingText}>Carregando usuários...</p>
           </div>
-        ) : users.length === 0 ? (
+        ) : filteredUsers.length === 0 ? (
           <div style={styles.emptyState}>
             <div style={styles.emptyIcon}>📭</div>
             <p style={styles.emptyText}>Nenhum usuário encontrado</p>
@@ -398,11 +505,13 @@ const Admin = () => {
                   <th style={styles.tableHeaderCell}>OAB</th>
                   <th style={styles.tableHeaderCell}>Perfil</th>
                   <th style={styles.tableHeaderCell}>Status</th>
+                  <th style={styles.tableHeaderCell}>Data Cadastro</th>
+                  <th style={styles.tableHeaderCell}>Bloqueio</th>
                   <th style={styles.tableHeaderCell}>Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {users.map((user, index) => (
+                {filteredUsers.map((user, index) => (
                   <tr key={user.id} style={{
                     ...styles.tableRow,
                     backgroundColor: index % 2 === 0 ? '#ffffff' : '#f9fafb',
@@ -425,23 +534,129 @@ const Admin = () => {
                     <td style={styles.tableCell}>{user.cpf || 'N/A'}</td>
                     <td style={styles.tableCell}>{user.numeroOAB || 'N/A'}</td>
                     <td style={styles.tableCell}>
-                      <span style={styles.roleBadge}>{user.role}</span>
+                      <select
+                        value={user.role}
+                        onChange={(e) => handleChangeRole(user.id, e.target.value)}
+                        style={styles.roleSelect}
+                      >
+                        <option value="ADMIN">Admin</option>
+                        <option value="FINANCEIRO">Financeiro</option>
+                        <option value="SINDICALIZADO">Sindicalizado</option>
+                      </select>
                     </td>
                     <td style={styles.tableCell}>
-                      <span
+                      <button
+                        onClick={() => handleToggleStatus(user.id, user.status)}
                         style={{
-                          ...styles.statusBadge,
-                          ...(user.status === 'ATIVO' ? styles.statusActive : {}),
-                          ...(user.status === 'INADIMPLENTE' ? styles.statusWarning : {}),
-                          ...(user.status === 'INATIVO' ? styles.statusInactive : {}),
+                          ...styles.statusButton,
+                          ...(user.status === 'ATIVO' ? styles.statusButtonActive : {}),
+                          ...(user.status === 'INADIMPLENTE' ? styles.statusButtonWarning : {}),
+                          ...(user.status === 'INATIVO' ? styles.statusButtonInactive : {}),
                         }}
                       >
                         {user.status}
-                      </span>
+                      </button>
+                    </td>
+                    <td style={styles.tableCell}>
+                      {user.createdAt ? new Date(user.createdAt).toLocaleDateString('pt-BR') : 'N/A'}
+                    </td>
+                    <td style={styles.tableCell}>
+                      <button
+                        onClick={() => handleBlockUser(user.id, user.bloqueado)}
+                        style={{
+                          ...styles.blockButton,
+                          ...(user.bloqueado ? styles.blockButtonBlocked : styles.blockButtonActive),
+                        }}
+                      >
+                        {user.bloqueado ? '🔓 Desbloquear' : '🔒 Bloquear'}
+                      </button>
                     </td>
                     <td style={styles.tableCell}>
                       <button
                         onClick={() => handleDeleteUser(user.id)}
+                        style={styles.deleteButton}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = '#dc2626';
+                          e.currentTarget.style.transform = 'scale(1.05)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = '#ef4444';
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }}
+                      >
+                        🗑️ Excluir
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div style={styles.tableSection}>
+        <div style={styles.sectionHeader}>
+          <div style={styles.sectionIcon}>📨</div>
+          <h2 style={styles.sectionTitle}>Histórico de Notificações Enviadas</h2>
+        </div>
+        {loadingNotifications ? (
+          <div style={styles.loadingState}>
+            <div style={styles.loadingSpinner}>⏳</div>
+            <p style={styles.loadingText}>Carregando notificações...</p>
+          </div>
+        ) : notifications.length === 0 ? (
+          <div style={styles.emptyState}>
+            <div style={styles.emptyIcon}>📭</div>
+            <p style={styles.emptyText}>Nenhuma notificação enviada</p>
+          </div>
+        ) : (
+          <div style={styles.tableContainer}>
+            <table style={styles.table}>
+              <thead>
+                <tr style={styles.tableHeader}>
+                  <th style={styles.tableHeaderCell}>Título</th>
+                  <th style={styles.tableHeaderCell}>Tipo</th>
+                  <th style={styles.tableHeaderCell}>Canal</th>
+                  <th style={styles.tableHeaderCell}>Data de Envio</th>
+                  <th style={styles.tableHeaderCell}>Destinatário</th>
+                  <th style={styles.tableHeaderCell}>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {notifications.map((notification, index) => (
+                  <tr key={notification.id} style={{
+                    ...styles.tableRow,
+                    backgroundColor: index % 2 === 0 ? '#ffffff' : '#f9fafb',
+                  }}>
+                    <td style={styles.tableCell}>
+                      <div style={styles.notificationTitle}>
+                        {notification.tipo === 'URGENTE' && '⚠️ '}
+                        {notification.titulo}
+                      </div>
+                    </td>
+                    <td style={styles.tableCell}>
+                      <span style={{
+                        ...styles.typeBadge,
+                        ...(notification.tipo === 'GERAL' ? styles.typeGeneral : {}),
+                        ...(notification.tipo === 'INDIVIDUAL' ? styles.typeIndividual : {}),
+                        ...(notification.tipo === 'URGENTE' ? styles.typeUrgent : {}),
+                      }}>
+                        {notification.tipo}
+                      </span>
+                    </td>
+                    <td style={styles.tableCell}>
+                      <span style={styles.canalBadge}>{notification.canal}</span>
+                    </td>
+                    <td style={styles.tableCell}>
+                      {notification.createdAt ? new Date(notification.createdAt).toLocaleDateString('pt-BR') : 'N/A'}
+                    </td>
+                    <td style={styles.tableCell}>
+                      {notification.tipo === 'INDIVIDUAL' ? notification.usuarioId || 'N/A' : 'Todos'}
+                    </td>
+                    <td style={styles.tableCell}>
+                      <button
+                        onClick={() => handleDeleteNotification(notification.id)}
                         style={styles.deleteButton}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.backgroundColor = '#dc2626';
@@ -720,6 +935,141 @@ const styles = {
   userName: {
     fontWeight: '600',
     color: '#111827',
+  },
+  filterSection: {
+    display: 'flex',
+    gap: '1rem',
+    marginBottom: '1.5rem',
+    padding: '1.5rem',
+    backgroundColor: '#f9fafb',
+    borderRadius: '0.75rem',
+    border: '1px solid #e5e7eb',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+  },
+  searchContainer: {
+    flex: '1 1 300px',
+  },
+  searchInput: {
+    width: '100%',
+    padding: '0.75rem 1rem',
+    border: '2px solid #d1d5db',
+    borderRadius: '0.5rem',
+    fontSize: '0.9375rem',
+    outline: 'none',
+    transition: 'border-color 0.2s',
+  },
+  filterContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+  },
+  filterLabel: {
+    fontSize: '0.875rem',
+    fontWeight: '600',
+    color: '#374151',
+    whiteSpace: 'nowrap',
+  },
+  filterSelect: {
+    padding: '0.75rem 1rem',
+    border: '2px solid #d1d5db',
+    borderRadius: '0.5rem',
+    fontSize: '0.9375rem',
+    outline: 'none',
+    backgroundColor: '#ffffff',
+    cursor: 'pointer',
+  },
+  resultCount: {
+    marginLeft: 'auto',
+  },
+  resultText: {
+    fontSize: '0.875rem',
+    fontWeight: '600',
+    color: '#6b7280',
+  },
+  roleSelect: {
+    padding: '0.5rem 0.75rem',
+    border: '1px solid #d1d5db',
+    borderRadius: '0.375rem',
+    fontSize: '0.8125rem',
+    fontWeight: '600',
+    outline: 'none',
+    backgroundColor: '#ffffff',
+    cursor: 'pointer',
+    color: '#1a365d',
+  },
+  statusButton: {
+    padding: '0.5rem 1rem',
+    border: 'none',
+    borderRadius: '9999px',
+    fontSize: '0.75rem',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: '0.025em',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  },
+  statusButtonActive: {
+    backgroundColor: '#d1fae5',
+    color: '#065f46',
+  },
+  statusButtonWarning: {
+    backgroundColor: '#fef3c7',
+    color: '#92400e',
+  },
+  statusButtonInactive: {
+    backgroundColor: '#f3f4f6',
+    color: '#4b5563',
+  },
+  blockButton: {
+    padding: '0.5rem 1rem',
+    border: 'none',
+    borderRadius: '0.5rem',
+    fontSize: '0.75rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  },
+  blockButtonActive: {
+    backgroundColor: '#fef3c7',
+    color: '#92400e',
+  },
+  blockButtonBlocked: {
+    backgroundColor: '#fee2e2',
+    color: '#991b1b',
+  },
+  notificationTitle: {
+    fontWeight: '600',
+    color: '#111827',
+  },
+  typeBadge: {
+    display: 'inline-block',
+    padding: '0.25rem 0.75rem',
+    borderRadius: '9999px',
+    fontSize: '0.75rem',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  typeGeneral: {
+    backgroundColor: '#dbeafe',
+    color: '#1e40af',
+  },
+  typeIndividual: {
+    backgroundColor: '#e0e7ff',
+    color: '#4338ca',
+  },
+  typeUrgent: {
+    backgroundColor: '#fee2e2',
+    color: '#991b1b',
+  },
+  canalBadge: {
+    display: 'inline-block',
+    padding: '0.25rem 0.75rem',
+    borderRadius: '0.375rem',
+    fontSize: '0.75rem',
+    fontWeight: '600',
+    backgroundColor: '#f3f4f6',
+    color: '#374151',
   },
   statusBadge: {
     display: 'inline-block',

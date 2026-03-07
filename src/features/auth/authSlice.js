@@ -100,12 +100,14 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.user = action.payload;
         state.error = null;
+        state.initialized = true;
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
         state.isAuthenticated = false;
         state.user = null;
         state.error = action.payload;
+        state.initialized = true;
       })
       .addCase(refreshToken.pending, (state) => {
         state.loading = true;
@@ -115,6 +117,7 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.user = action.payload;
         state.error = null;
+        state.initialized = true;
       })
       .addCase(refreshToken.rejected, (state) => {
         state.loading = false;
@@ -129,12 +132,14 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
         state.error = null;
+        state.initialized = true;
       })
       .addCase(logout.rejected, (state) => {
         state.loading = false;
         state.isAuthenticated = false;
         state.user = null;
         state.error = null;
+        state.initialized = true;
       })
       .addCase(getProfile.pending, (state) => {
         state.loading = true;

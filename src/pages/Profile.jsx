@@ -155,7 +155,7 @@ const Profile = () => {
       <div style={styles.grid}>
         <div style={styles.section}>
           <div style={styles.sectionHeader}>
-            <div style={styles.sectionIcon}>�</div>
+            <div style={styles.sectionIcon}>📷</div>
             <h2 style={styles.sectionTitle}>Foto de Perfil</h2>
           </div>
           <div style={styles.photoSection}>
@@ -191,7 +191,7 @@ const Profile = () => {
 
         <div style={styles.section}>
           <div style={styles.sectionHeader}>
-            <div style={styles.sectionIcon}>�</div>
+            <div style={styles.sectionIcon}>👤</div>
             <h2 style={styles.sectionTitle}>Informações Pessoais</h2>
           </div>
           <form onSubmit={handleSubmitProfile(onSubmitProfile)} style={styles.form}>

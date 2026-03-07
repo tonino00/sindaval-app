@@ -11,19 +11,57 @@ const api = axios.create({
   withCredentials: true, // Envia cookies automaticamente
 });
 
+// Flag para controlar se já estamos tentando fazer refresh
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  
+  failedQueue = [];
+};
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Não tentar refresh em rotas de autenticação
+    const isAuthRoute = originalRequest.url?.includes('/auth/');
+    
+    if (error.response?.status === 401 && !isAuthRoute) {
+      if (isRefreshing) {
+        // Se já está fazendo refresh, adiciona à fila
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then(() => {
+          return api(originalRequest);
+        }).catch(err => {
+          return Promise.reject(err);
+        });
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
 
       try {
         await api.post('/auth/refresh');
+        processQueue(null);
+        isRefreshing = false;
         return api(originalRequest);
       } catch (refreshError) {
-        window.location.href = '/login';
+        processQueue(refreshError, null);
+        isRefreshing = false;
+        // Limpar autenticação e redirecionar para login apenas se não estiver já lá
+        if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshError);
       }
     }
