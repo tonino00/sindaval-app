@@ -5,13 +5,46 @@ import { z } from 'zod';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 
+const validateCPF = (cpf) => {
+  const clean = String(cpf || '').replace(/\D/g, '');
+  if (clean.length !== 11) return false;
+  if (/^(\d)\1+$/.test(clean)) return false;
+  let sum = 0;
+  for (let i = 0; i < 9; i++) sum += parseInt(clean.charAt(i), 10) * (10 - i);
+  let check = (sum * 10) % 11;
+  if (check === 10) check = 0;
+  if (check !== parseInt(clean.charAt(9), 10)) return false;
+  sum = 0;
+  for (let i = 0; i < 10; i++) sum += parseInt(clean.charAt(i), 10) * (11 - i);
+  check = (sum * 10) % 11;
+  if (check === 10) check = 0;
+  return check === parseInt(clean.charAt(10), 10);
+};
+
+const validateOAB = (value) => {
+  const v = String(value || '').trim().toUpperCase();
+  if (!v) return false;
+  // Aceita padrões comuns: "OAB/UF 123456", "UF123456", "OAB123456"
+  return /^(OAB\/?\s*)?([A-Z]{2})?\s*\d{4,10}$/.test(v);
+};
+
+const validatePhone = (value) => {
+  const clean = String(value || '').replace(/\D/g, '');
+  // 10 (fixo) ou 11 (celular) dígitos com DDD
+  return clean.length === 10 || clean.length === 11;
+};
+
 const registerSchema = z.object({
   nomeCompleto: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
   email: z.string().email('Email inválido'),
-  cpf: z.string().min(11, 'CPF inválido'),
+  cpf: z.string().min(11, 'CPF inválido').refine(validateCPF, 'CPF inválido'),
+  numeroOAB: z.string().min(1, 'Número da OAB é obrigatório').refine(validateOAB, 'Formato da OAB inválido'),
+  telefone: z.string().min(1, 'Telefone é obrigatório').refine(validatePhone, 'Telefone inválido'),
+  enderecoResidencial: z.string().optional(),
+  enderecoProfissional: z.string().optional(),
+  instagram: z.string().optional(),
   password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
   confirmPassword: z.string().min(6, 'Confirmação obrigatória'),
-  numeroOAB: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'As senhas não coincidem',
   path: ['confirmPassword'],
@@ -22,6 +55,8 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
 
   const {
     register,
@@ -31,22 +66,70 @@ const Register = () => {
     resolver: zodResolver(registerSchema),
   });
 
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Por favor, selecione uma imagem válida');
+      setPhotoFile(null);
+      setPhotoPreview(null);
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('A imagem deve ter no máximo 5MB');
+      setPhotoFile(null);
+      setPhotoPreview(null);
+      return;
+    }
+
+    setError(null);
+    setPhotoFile(file);
+
+    const reader = new FileReader();
+    reader.onloadend = () => setPhotoPreview(reader.result);
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+  };
+
   const onSubmit = async (data) => {
     setLoading(true);
     setError(null);
 
     try {
-      await api.post('/auth/register', {
-        nomeCompleto: data.nomeCompleto,
-        email: data.email,
-        cpf: data.cpf,
-        password: data.password,
-        numeroOAB: data.numeroOAB || undefined,
+      if (!photoFile) {
+        setError('Foto do usuário é obrigatória');
+        setLoading(false);
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('nomeCompleto', data.nomeCompleto);
+      formData.append('email', data.email);
+      formData.append('cpf', data.cpf);
+      formData.append('numeroOAB', data.numeroOAB);
+      formData.append('telefone', data.telefone);
+      if (data.enderecoResidencial) formData.append('enderecoResidencial', data.enderecoResidencial);
+      if (data.enderecoProfissional) formData.append('enderecoProfissional', data.enderecoProfissional);
+      if (data.instagram) formData.append('instagram', data.instagram);
+      formData.append('password', data.password);
+      formData.append('foto', photoFile);
+
+      await api.post('/auth/register', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
-      
+
       setSuccess(true);
+      handleRemovePhoto();
       setTimeout(() => {
-        navigate('/login');
+        navigate('/dashboard');
       }, 2000);
     } catch (err) {
       setError(err.response?.data?.message || 'Erro ao criar conta');
@@ -61,7 +144,7 @@ const Register = () => {
         <div style={styles.card}>
           <div style={styles.successIcon}>✅</div>
           <h2 style={styles.successTitle}>Conta criada com sucesso!</h2>
-          <p style={styles.successText}>Redirecionando para o login...</p>
+          <p style={styles.successText}>Redirecionando para o sistema...</p>
         </div>
       </div>
     );
@@ -74,6 +157,40 @@ const Register = () => {
         <p style={styles.subtitle}>Sindaval - Sistema Jurídico</p>
 
         <form onSubmit={handleSubmit(onSubmit)} style={styles.form}>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Foto do Usuário</label>
+            <div style={styles.photoUploadContainer}>
+              {photoPreview ? (
+                <div style={styles.photoPreviewWrapper}>
+                  <img src={photoPreview} alt="Preview" style={styles.photoPreview} />
+                  <button
+                    type="button"
+                    onClick={handleRemovePhoto}
+                    style={styles.removePhotoButton}
+                    disabled={loading}
+                  >
+                    ✕ Remover
+                  </button>
+                </div>
+              ) : (
+                <label style={styles.photoUploadLabel}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                    style={styles.photoInput}
+                    disabled={loading}
+                  />
+                  <div style={styles.photoUploadPlaceholder}>
+                    <span style={styles.photoUploadIcon}>📷</span>
+                    <span style={styles.photoUploadText}>Clique para adicionar foto</span>
+                    <span style={styles.photoUploadHint}>JPG, PNG ou GIF (máx. 5MB)</span>
+                  </div>
+                </label>
+              )}
+            </div>
+          </div>
+
           <div style={styles.formGroup}>
             <label style={styles.label}>Nome Completo</label>
             <input
@@ -126,12 +243,68 @@ const Register = () => {
           </div>
 
           <div style={styles.formGroup}>
-            <label style={styles.label}>Número OAB (opcional)</label>
+            <label style={styles.label}>Número da OAB</label>
             <input
               type="text"
               {...register('numeroOAB')}
+              style={{
+                ...styles.input,
+                ...(errors.numeroOAB ? styles.inputError : {}),
+              }}
+              placeholder="Ex: OAB/AL 123456"
+              disabled={loading}
+            />
+            {errors.numeroOAB && (
+              <span style={styles.errorText}>{errors.numeroOAB.message}</span>
+            )}
+          </div>
+
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Telefone</label>
+            <input
+              type="text"
+              {...register('telefone')}
+              style={{
+                ...styles.input,
+                ...(errors.telefone ? styles.inputError : {}),
+              }}
+              placeholder="(82) 99999-9999"
+              disabled={loading}
+            />
+            {errors.telefone && (
+              <span style={styles.errorText}>{errors.telefone.message}</span>
+            )}
+          </div>
+
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Endereço Residencial (opcional)</label>
+            <input
+              type="text"
+              {...register('enderecoResidencial')}
               style={styles.input}
-              placeholder="Ex: OAB123456"
+              placeholder="Rua, número, bairro, cidade"
+              disabled={loading}
+            />
+          </div>
+
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Endereço Profissional (opcional)</label>
+            <input
+              type="text"
+              {...register('enderecoProfissional')}
+              style={styles.input}
+              placeholder="Rua, número, bairro, cidade"
+              disabled={loading}
+            />
+          </div>
+
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Instagram (opcional)</label>
+            <input
+              type="text"
+              {...register('instagram')}
+              style={styles.input}
+              placeholder="@seuusuario"
               disabled={loading}
             />
           </div>
@@ -236,6 +409,62 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: '0.5rem',
+  },
+  photoUploadContainer: {
+    border: '2px dashed #d1d5db',
+    borderRadius: '0.75rem',
+    padding: '1rem',
+    backgroundColor: '#f9fafb',
+  },
+  photoUploadLabel: {
+    cursor: 'pointer',
+    display: 'block',
+  },
+  photoInput: {
+    display: 'none',
+  },
+  photoUploadPlaceholder: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '0.5rem',
+    padding: '1.25rem 0.75rem',
+  },
+  photoUploadIcon: {
+    fontSize: '2rem',
+  },
+  photoUploadText: {
+    fontSize: '0.9375rem',
+    fontWeight: '600',
+    color: '#1a365d',
+  },
+  photoUploadHint: {
+    fontSize: '0.8125rem',
+    color: '#6b7280',
+  },
+  photoPreviewWrapper: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '0.75rem',
+  },
+  photoPreview: {
+    width: '160px',
+    height: '160px',
+    objectFit: 'cover',
+    borderRadius: '0.75rem',
+    border: '2px solid #e5e7eb',
+    backgroundColor: '#ffffff',
+  },
+  removePhotoButton: {
+    padding: '0.5rem 0.875rem',
+    borderRadius: '0.5rem',
+    border: '1px solid #d1d5db',
+    backgroundColor: '#ffffff',
+    cursor: 'pointer',
+    fontSize: '0.875rem',
+    fontWeight: '600',
+    color: '#991b1b',
   },
   label: {
     fontSize: '0.875rem',

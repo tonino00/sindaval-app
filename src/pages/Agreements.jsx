@@ -133,13 +133,6 @@ const Agreements = () => {
                 )}
               </div>
 
-              {/* Footer com botão de ação */}
-              <div style={styles.cardFooter}>
-                <button style={styles.actionButton}>
-                  <span style={styles.buttonIcon}>✨</span>
-                  <span style={styles.buttonText}>Usar Convênio</span>
-                </button>
-              </div>
             </div>
           ))}
         </div>

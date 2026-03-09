@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
+import { formatDateTime } from '../utils/formatters';
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
@@ -73,13 +74,13 @@ const PaymentSuccess = () => {
                 <span style={styles.detailValue}>
                   {paymentData.metodoPagamento === 'PIX' && 'Pix'}
                   {paymentData.metodoPagamento === 'CARTAO_CREDITO' && 'Cartão de Crédito'}
-                  {paymentData.metodoPagamento === 'BOLETO' && 'Boleto'}
+                  {paymentData.metodoPagamento === 'CARTAO_DEBITO' && 'Cartão de Débito'}
                 </span>
               </div>
               <div style={styles.detailItem}>
                 <span style={styles.detailLabel}>Data:</span>
                 <span style={styles.detailValue}>
-                  {new Date(paymentData.createdAt).toLocaleString('pt-BR')}
+                  {formatDateTime(paymentData.createdAt)}
                 </span>
               </div>
               {paymentData.transactionId && (
@@ -116,7 +117,7 @@ const PaymentSuccess = () => {
 
           <div style={styles.infoBox}>
             <p style={styles.infoText}>
-              <strong>Boleto:</strong> O pagamento pode levar até 3 dias úteis para ser confirmado.
+              <strong>Cartão:</strong> A confirmação é geralmente imediata, mas pode levar alguns minutos.
             </p>
             <p style={styles.infoText}>
               <strong>Pix:</strong> A confirmação é geralmente instantânea.

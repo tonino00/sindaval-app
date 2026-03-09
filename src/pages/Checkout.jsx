@@ -107,16 +107,16 @@ const Checkout = () => {
               </button>
 
               <button
-                onClick={() => setPaymentMethod('BOLETO')}
+                onClick={() => setPaymentMethod('CARTAO_DEBITO')}
                 style={{
                   ...styles.methodButton,
-                  ...(paymentMethod === 'BOLETO' ? styles.methodButtonActive : {}),
+                  ...(paymentMethod === 'CARTAO_DEBITO' ? styles.methodButtonActive : {}),
                 }}
               >
-                <div style={styles.methodIcon}>📄</div>
+                <div style={styles.methodIcon}>💳</div>
                 <div style={styles.methodInfo}>
-                  <h3 style={styles.methodName}>Boleto Bancário</h3>
-                  <p style={styles.methodDescription}>Vencimento em 3 dias úteis</p>
+                  <h3 style={styles.methodName}>Cartão de Débito</h3>
+                  <p style={styles.methodDescription}>Aprovação geralmente imediata</p>
                 </div>
               </button>
             </div>
@@ -270,10 +270,13 @@ const styles = {
     cursor: 'pointer',
     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
     textAlign: 'left',
+    outline: 'none',
+    boxShadow: 'none',
   },
   methodButtonActive: {
     borderColor: '#1a365d',
     backgroundColor: '#eff6ff',
+    boxShadow: '0 0 0 3px rgba(26, 54, 93, 0.12)',
   },
   methodIcon: {
     fontSize: '2rem',

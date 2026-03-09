@@ -9,7 +9,7 @@ const notificationSchema = z.object({
   mensagem: z.string().min(10, 'Mensagem deve ter no mínimo 10 caracteres'),
   tipo: z.enum(['GERAL', 'INDIVIDUAL']),
   canal: z.enum(['INTERNA', 'EMAIL', 'WHATSAPP', 'MULTICANAL']),
-  usuarioId: z.string().optional(),
+  usuarioEmail: z.string().email('Email inválido').optional(),
 });
 
 const userSchema = z.object({
@@ -298,12 +298,12 @@ const Admin = () => {
 
             {tipoNotificacao === 'INDIVIDUAL' && (
               <div style={styles.formGroup}>
-                <label style={styles.label}>ID do Usuário</label>
+                <label style={styles.label}>Email do Usuário</label>
                 <input
-                  type="text"
-                  {...registerNotification('usuarioId')}
+                  type="email"
+                  {...registerNotification('usuarioEmail')}
                   style={styles.input}
-                  placeholder="ID do usuário"
+                  placeholder="email@exemplo.com"
                 />
               </div>
             )}
@@ -652,7 +652,7 @@ const Admin = () => {
                       {notification.createdAt ? new Date(notification.createdAt).toLocaleDateString('pt-BR') : 'N/A'}
                     </td>
                     <td style={styles.tableCell}>
-                      {notification.tipo === 'INDIVIDUAL' ? notification.usuarioId || 'N/A' : 'Todos'}
+                      {notification.tipo === 'INDIVIDUAL' ? notification.usuarioEmail || 'N/A' : 'Todos'}
                     </td>
                     <td style={styles.tableCell}>
                       <button

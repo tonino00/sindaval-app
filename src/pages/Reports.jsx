@@ -48,15 +48,22 @@ const Reports = () => {
     try {
       const response = await api.post('/admin/reports/export', filters, {
         responseType: 'blob',
+        withCredentials: true,
       });
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const disposition = response.headers?.['content-disposition'];
+      const filenameMatch = disposition?.match(/filename=([^;]+)/i);
+      const filename = filenameMatch?.[1] ?? `relatorio-${filters.tipo}-${Date.now()}.${filters.formato}`;
+
+      const blob = new Blob([response.data], { type: response.headers?.['content-type'] });
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `relatorio-${filters.tipo}-${Date.now()}.${filters.formato}`);
+      link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
       link.remove();
+      window.URL.revokeObjectURL(url);
       setSuccess('Relatório exportado com sucesso!');
     } catch (err) {
       setError(err.response?.data?.message || 'Erro ao exportar relatório');
@@ -71,6 +78,22 @@ const Reports = () => {
 
   const preview = getCurrentPreview();
 
+  const getTipoLabel = (tipo) => {
+    if (tipo === 'usuarios') return 'Usuários';
+    if (tipo === 'pagamentos') return 'Pagamentos';
+    if (tipo === 'convenios') return 'Convênios';
+    if (tipo === 'notificacoes') return 'Notificações';
+    if (tipo === 'financeiro') return 'Financeiro';
+    return 'Relatório';
+  };
+
+  const getFormatoLabel = (formato) => {
+    if (formato === 'csv') return 'CSV';
+    if (formato === 'pdf') return 'PDF';
+    if (formato === 'xlsx') return 'Excel (XLSX)';
+    return formato;
+  };
+
   return (
     <div style={styles.container}>
       <div style={styles.header}>
@@ -78,11 +101,26 @@ const Reports = () => {
           <h1 style={styles.title}>Relatórios e Análises</h1>
           <p style={styles.subtitle}>Exporte dados e gere relatórios personalizados</p>
         </div>
+        <div style={styles.headerBadge}>
+          <span style={styles.headerBadgeLabel}>Seleção Atual</span>
+          <span style={styles.headerBadgeValue}>
+            {getTipoLabel(filters.tipo)} • {getFormatoLabel(filters.formato)}
+          </span>
+        </div>
       </div>
 
       <div style={styles.grid}>
         <div style={styles.previewCard}>
-          <h2 style={styles.previewTitle}>📊 Preview de Dados</h2>
+          <div style={styles.previewHeader}>
+            <h2 style={styles.previewTitle}>📊 Visão Geral</h2>
+            <button
+              onClick={fetchPreviewData}
+              style={styles.refreshButton}
+              disabled={loadingPreview}
+            >
+              {loadingPreview ? '⏳ Atualizando...' : '🔄 Atualizar'}
+            </button>
+          </div>
           {loadingPreview ? (
             <div style={styles.loadingPreview}>
               <p>⏳ Carregando preview...</p>
@@ -133,33 +171,35 @@ const Reports = () => {
           <h2 style={styles.cardTitle}>⚙️ Configurar Relatório</h2>
 
           <div style={styles.form}>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Tipo de Relatório</label>
-            <select
-              value={filters.tipo}
-              onChange={(e) => setFilters({ ...filters, tipo: e.target.value })}
-              style={styles.select}
-            >
-              <option value="usuarios">Usuários</option>
-              <option value="pagamentos">Pagamentos</option>
-              <option value="convenios">Convênios</option>
-              <option value="notificacoes">Notificações</option>
-              <option value="financeiro">Financeiro</option>
-            </select>
-          </div>
+            <div style={styles.formRow}>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Tipo de Relatório</label>
+                <select
+                  value={filters.tipo}
+                  onChange={(e) => setFilters({ ...filters, tipo: e.target.value })}
+                  style={styles.select}
+                >
+                  <option value="usuarios">Usuários</option>
+                  <option value="pagamentos">Pagamentos</option>
+                  <option value="convenios">Convênios</option>
+                  <option value="notificacoes">Notificações</option>
+                  <option value="financeiro">Financeiro</option>
+                </select>
+              </div>
 
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Formato</label>
-            <select
-              value={filters.formato}
-              onChange={(e) => setFilters({ ...filters, formato: e.target.value })}
-              style={styles.select}
-            >
-              <option value="csv">CSV</option>
-              <option value="pdf">PDF</option>
-              <option value="xlsx">Excel (XLSX)</option>
-            </select>
-          </div>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Formato</label>
+                <select
+                  value={filters.formato}
+                  onChange={(e) => setFilters({ ...filters, formato: e.target.value })}
+                  style={styles.select}
+                >
+                  <option value="csv">CSV</option>
+                  <option value="pdf">PDF</option>
+                  <option value="xlsx">Excel (XLSX)</option>
+                </select>
+              </div>
+            </div>
 
           <div style={styles.formRow}>
             <div style={styles.formGroup}>
@@ -256,6 +296,33 @@ const styles = {
   },
   header: {
     marginBottom: '2.5rem',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    gap: '1.25rem',
+    flexWrap: 'wrap',
+  },
+  headerBadge: {
+    padding: '0.75rem 1rem',
+    backgroundColor: '#f9fafb',
+    border: '1px solid #e5e7eb',
+    borderRadius: '0.75rem',
+    minWidth: '240px',
+  },
+  headerBadgeLabel: {
+    display: 'block',
+    fontSize: '0.75rem',
+    fontWeight: '700',
+    color: '#6b7280',
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+    marginBottom: '0.25rem',
+  },
+  headerBadgeValue: {
+    display: 'block',
+    fontSize: '0.9375rem',
+    fontWeight: '700',
+    color: '#111827',
   },
   title: {
     fontSize: '2rem',
@@ -292,11 +359,28 @@ const styles = {
     fontSize: '1.125rem',
     fontWeight: '700',
     color: '#1a365d',
-    marginBottom: '1.5rem',
+    margin: 0,
+  },
+  previewHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '1rem',
+    marginBottom: '1.25rem',
+  },
+  refreshButton: {
+    padding: '0.625rem 0.875rem',
+    borderRadius: '0.75rem',
+    border: '1px solid #d1d5db',
+    backgroundColor: '#ffffff',
+    cursor: 'pointer',
+    fontSize: '0.875rem',
+    fontWeight: '700',
+    color: '#1a365d',
   },
   previewStats: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(2, 1fr)',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
     gap: '1rem',
     marginBottom: '1.5rem',
   },
@@ -387,8 +471,8 @@ const styles = {
     gap: '0.5rem',
   },
   formRow: {
-    display: 'inline',
-    gridTemplateColumns: '1fr 1fr',
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))',
     gap: '1rem',
   },
   label: {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import DOMPurify from 'dompurify';
+import { formatDateTime } from '../utils/formatters';
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
@@ -113,7 +114,7 @@ const Notifications = () => {
 
               <div style={styles.notificationFooter}>
                 <span style={styles.notificationDate}>
-                  {new Date(notif.createdAt).toLocaleString('pt-BR')}
+                  {formatDateTime(notif.createdAt)}
                 </span>
                 {!notif.lida && (
                   <button

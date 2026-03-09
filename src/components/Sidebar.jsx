@@ -24,7 +24,6 @@ const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
     { to: '/admin', label: 'Gestão de Usuários', roles: ['ADMIN'] },
     { to: '/admin/agreements', label: 'Gestão de Convênios', roles: ['ADMIN'] },
     { to: '/admin/reports', label: 'Relatórios', roles: ['ADMIN'] },
-    { to: '/notifications', label: 'Notificações', roles: ['ADMIN'] },
   ];
 
   const filteredLinks = links.filter((link) =>

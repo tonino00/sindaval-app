@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
+import { formatDate } from '../utils/formatters';
 
 const Payments = () => {
   const [payments, setPayments] = useState([]);
@@ -127,7 +128,7 @@ const Payments = () => {
               <div style={styles.detailIcon}>📝</div>
               <div style={styles.detailContent}>
                 <p style={styles.detailLabel}>Data:</p>
-                <p style={styles.detailValue}>{new Date(payment.createdAt).toLocaleDateString('pt-BR')}</p>
+                <p style={styles.detailValue}>{formatDate(payment.createdAt)}</p>
                 <p style={styles.detailLabel}>Valor:</p>
                 <p style={styles.detailValue}>R$ {payment.valor.toFixed(2)}</p>
                 <p style={styles.detailLabel}>Status:</p>

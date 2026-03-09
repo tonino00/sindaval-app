@@ -51,11 +51,15 @@ export const formatCurrency = (value) => {
 export const formatDate = (date) => {
   if (!date) return '';
   
-  return new Date(date).toLocaleDateString('pt-BR');
+  return new Date(date).toLocaleDateString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+  });
 };
 
 export const formatDateTime = (date) => {
   if (!date) return '';
   
-  return new Date(date).toLocaleString('pt-BR');
+  return new Date(date).toLocaleString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+  });
 };
