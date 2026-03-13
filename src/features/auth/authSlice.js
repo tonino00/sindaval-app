@@ -19,6 +19,7 @@ const decodeUser = (user) => {
     nomeCompleto: user.nomeCompleto,
     email: user.email,
     cpf: user.cpf,
+    fotoUrl: user.fotoUrl,
     numeroOAB: user.numeroOAB,
     role: user.role,
     status: user.status,

@@ -49,6 +49,15 @@ const DigitalCard = () => {
       <div style={styles.pageHeader}>
         <h1 style={styles.title}>Carteira Digital do Sindicalizado</h1>
         <p style={styles.subtitle}>Apresente este documento para validação de benefícios</p>
+        <p style={styles.subtitle}>Escaneie o QR Code para visualizar a carteira pública</p>
+      </div>
+
+      <div style={styles.publicQrNotice}>
+        <div style={styles.publicQrNoticeIcon}>📌</div>
+        <div>
+          <p style={styles.publicQrNoticeTitle}>Leitura por celular</p>
+          <p style={styles.publicQrNoticeText}>Escaneie o QR Code para visualizar a carteira pública</p>
+        </div>
       </div>
 
       <div style={styles.cardContainer}>
@@ -71,7 +80,7 @@ const DigitalCard = () => {
               <div style={styles.photoSection}>
                 {user?.fotoUrl ? (
                   <img 
-                    src={API_URL + user.fotoUrl} 
+                    src={user.fotoUrl} 
                     alt={user.nomeCompleto}
                     style={styles.userPhotoLarge}
                   />
@@ -222,8 +231,33 @@ const DigitalCard = () => {
 
 const styles = {
   container: {
-    maxWidth: '900px',
+    maxWidth: '1400px',
     margin: '0 auto',
+  },
+  publicQrNotice: {
+    display: 'flex',
+    gap: '0.75rem',
+    alignItems: 'flex-start',
+    padding: '1rem 1.25rem',
+    backgroundColor: '#fff3cd',
+    border: '1px solid #ffeeba',
+    borderRadius: '0.75rem',
+    marginBottom: '1.5rem',
+    color: '#856404',
+  },
+  publicQrNoticeIcon: {
+    fontSize: '1.25rem',
+    lineHeight: 1.2,
+    marginTop: '0.1rem',
+  },
+  publicQrNoticeTitle: {
+    margin: 0,
+    fontWeight: '800',
+  },
+  publicQrNoticeText: {
+    margin: '0.25rem 0 0 0',
+    fontSize: '0.9rem',
+    lineHeight: 1.45,
   },
   pageHeader: {
     marginBottom: '2.5rem',
