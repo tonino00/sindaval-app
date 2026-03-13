@@ -101,7 +101,7 @@ const Profile = () => {
 
   const handlePhotoChange = async (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file) return; 
 
     if (!file.type.startsWith('image/')) {
       setErrorPhoto('Por favor, selecione uma imagem válida');

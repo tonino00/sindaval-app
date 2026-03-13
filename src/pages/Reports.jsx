@@ -1,5 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import api from '../services/api';
+import pdfMake from 'pdfmake/build/pdfmake';
+import pdfFonts from 'pdfmake/build/vfs_fonts';
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from 'recharts';
+
+const resolvedVfs = pdfFonts?.pdfMake?.vfs || pdfFonts?.vfs;
+if (resolvedVfs) {
+  pdfMake.vfs = resolvedVfs;
+}
 
 const Reports = () => {
   const [loading, setLoading] = useState(false);
@@ -40,31 +56,248 @@ const Reports = () => {
     }
   };
 
+  const formatPreviewLabel = (key) => {
+    if (!key) return '';
+    return key
+      .toString()
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+
+  const formatNumberBR = (value) => {
+    const num = Number(value);
+    if (Number.isNaN(num)) return String(value ?? '');
+    return num.toLocaleString('pt-BR');
+  };
+
+  const formatCurrencyBR = (value) => {
+    const num = Number(value);
+    if (Number.isNaN(num)) return String(value ?? '');
+    return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  };
+
+  const formatDateBR = (isoDate) => {
+    if (!isoDate) return '';
+    const [year, month, day] = isoDate.split('-');
+    if (!year || !month || !day) return isoDate;
+    return `${day}/${month}/${year}`;
+  };
+
+  const getPeriodoLabel = () => {
+    if (filters.dataInicio && filters.dataFim) return `${filters.dataInicio} a ${filters.dataFim}`;
+    if (filters.dataInicio) return `A partir de ${filters.dataInicio}`;
+    if (filters.dataFim) return `Até ${filters.dataFim}`;
+    return 'Todo o período';
+  };
+
+  const getResumo = (dados) => {
+    const values = Object.values(dados || {}).map((v) => Number(v) || 0);
+    const totalRegistros = values.reduce((acc, v) => acc + v, 0);
+    const somaValores = values.reduce((acc, v) => acc + v, 0);
+    return { totalRegistros, somaValores };
+  };
+
+  const gerarPDFProfissional = (dados, tipo, filtrosAtuais) => {
+    const colors = {
+      primary: '#1a365d',
+      light: '#f3f4f6',
+      zebra: '#f9fafb',
+      text: '#111827',
+      muted: '#6b7280',
+    };
+
+    const now = new Date();
+    const periodo = (() => {
+      if (filtrosAtuais?.dataInicio && filtrosAtuais?.dataFim) return `${formatDateBR(filtrosAtuais.dataInicio)} a ${formatDateBR(filtrosAtuais.dataFim)}`;
+      if (filtrosAtuais?.dataInicio) return `A partir de ${formatDateBR(filtrosAtuais.dataInicio)}`;
+      if (filtrosAtuais?.dataFim) return `Até ${formatDateBR(filtrosAtuais.dataFim)}`;
+      return 'Todo o período';
+    })();
+
+    const entries = Object.entries(dados || {});
+    const resumo = getResumo(dados);
+
+    const body = [
+      [
+        { text: 'Métrica', style: 'tableHeader' },
+        { text: 'Valor', style: 'tableHeader', alignment: 'right' },
+      ],
+      ...entries.map(([k, v], idx) => [
+        { text: formatPreviewLabel(k), fillColor: idx % 2 === 0 ? colors.zebra : '#ffffff' },
+        { text: formatNumberBR(v), alignment: 'right', fillColor: idx % 2 === 0 ? colors.zebra : '#ffffff' },
+      ]),
+    ];
+
+    const docDefinition = {
+      pageSize: 'A4',
+      pageMargins: [40, 80, 40, 60],
+      header: {
+        margin: [40, 25, 40, 0],
+        columns: [
+          {
+            stack: [
+              { text: 'SINDAVAL', style: 'brand' },
+              { text: 'Relatório Institucional', style: 'brandSub' },
+            ],
+          },
+          {
+            stack: [
+              { text: `Tipo: ${getTipoLabel(tipo)}`, style: 'headerRight' },
+              { text: `Período: ${periodo}`, style: 'headerRight' },
+            ],
+            alignment: 'right',
+          },
+        ],
+      },
+      footer: (currentPage, pageCount) => ({
+        margin: [40, 0, 40, 25],
+        columns: [
+          { text: `Gerado em: ${now.toLocaleString('pt-BR')}`, style: 'footerLeft' },
+          { text: `${currentPage} / ${pageCount}`, style: 'footerRight', alignment: 'right' },
+        ],
+      }),
+      content: [
+        {
+          text: 'Resumo',
+          style: 'sectionTitle',
+          margin: [0, 0, 0, 10],
+        },
+        {
+          columns: [
+            {
+              width: '*',
+              stack: [
+                { text: 'Total de registros', style: 'metricLabel' },
+                { text: formatNumberBR(resumo.totalRegistros), style: 'metricValue' },
+              ],
+              style: 'metricCard',
+            },
+            {
+              width: '*',
+              stack: [
+                { text: 'Soma (indicativa)', style: 'metricLabel' },
+                { text: formatCurrencyBR(resumo.somaValores), style: 'metricValue' },
+              ],
+              style: 'metricCard',
+            },
+          ],
+          columnGap: 12,
+          margin: [0, 0, 0, 16],
+        },
+        {
+          text: 'Detalhamento',
+          style: 'sectionTitle',
+          margin: [0, 0, 0, 10],
+        },
+        {
+          table: {
+            headerRows: 1,
+            widths: ['*', 120],
+            body,
+          },
+          layout: {
+            hLineWidth: () => 1,
+            vLineWidth: () => 1,
+            hLineColor: () => '#e5e7eb',
+            vLineColor: () => '#e5e7eb',
+            paddingLeft: () => 8,
+            paddingRight: () => 8,
+            paddingTop: () => 6,
+            paddingBottom: () => 6,
+          },
+        },
+      ],
+      styles: {
+        brand: {
+          fontSize: 16,
+          bold: true,
+          color: colors.primary,
+        },
+        brandSub: {
+          fontSize: 10,
+          color: colors.muted,
+          margin: [0, 2, 0, 0],
+        },
+        headerRight: {
+          fontSize: 9,
+          color: colors.muted,
+        },
+        footerLeft: {
+          fontSize: 8,
+          color: colors.muted,
+        },
+        footerRight: {
+          fontSize: 8,
+          color: colors.muted,
+        },
+        sectionTitle: {
+          fontSize: 12,
+          bold: true,
+          color: colors.primary,
+        },
+        metricCard: {
+          margin: [0, 0, 0, 0],
+          fillColor: colors.light,
+          border: [false, false, false, false],
+        },
+        metricLabel: {
+          fontSize: 9,
+          color: colors.muted,
+          margin: [10, 10, 10, 2],
+        },
+        metricValue: {
+          fontSize: 16,
+          bold: true,
+          color: colors.text,
+          margin: [10, 0, 10, 10],
+        },
+        tableHeader: {
+          bold: true,
+          fillColor: colors.primary,
+          color: '#ffffff',
+          fontSize: 10,
+        },
+      },
+      defaultStyle: {
+        fontSize: 10,
+        color: colors.text,
+      },
+    };
+
+    pdfMake.createPdf(docDefinition).download(`relatorio-${tipo}-${Date.now()}.pdf`);
+  };
+
   const handleExport = async () => {
     setLoading(true);
     setError(null);
     setSuccess(null);
 
     try {
-      const response = await api.post('/admin/reports/export', filters, {
-        responseType: 'blob',
-        withCredentials: true,
-      });
+      if (filters.formato === 'pdf') {
+        const response = await api.get(`/admin/reports/preview?tipo=${filters.tipo}`);
+        gerarPDFProfissional(response.data, filters.tipo, filters);
+        setSuccess('PDF gerado com sucesso!');
+      } else {
+        const response = await api.post('/admin/reports/export', filters, {
+          responseType: 'blob',
+          withCredentials: true,
+        });
 
-      const disposition = response.headers?.['content-disposition'];
-      const filenameMatch = disposition?.match(/filename=([^;]+)/i);
-      const filename = filenameMatch?.[1] ?? `relatorio-${filters.tipo}-${Date.now()}.${filters.formato}`;
+        const disposition = response.headers?.['content-disposition'];
+        const filenameMatch = disposition?.match(/filename=([^;]+)/i);
+        const filename = filenameMatch?.[1] ?? `relatorio-${filters.tipo}-${Date.now()}.${filters.formato}`;
 
-      const blob = new Blob([response.data], { type: response.headers?.['content-type'] });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', filename);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-      setSuccess('Relatório exportado com sucesso!');
+        const blob = new Blob([response.data], { type: response.headers?.['content-type'] });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        setSuccess('Relatório exportado com sucesso!');
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Erro ao exportar relatório');
     } finally {
@@ -77,6 +310,14 @@ const Reports = () => {
   };
 
   const preview = getCurrentPreview();
+
+  const chartData = useMemo(() => {
+    const entries = Object.entries(preview || {});
+    return entries.map(([key, value]) => ({
+      name: formatPreviewLabel(key),
+      value: Number(value) || 0,
+    }));
+  }, [preview]);
 
   const getTipoLabel = (tipo) => {
     if (tipo === 'usuarios') return 'Usuários';
@@ -137,26 +378,19 @@ const Reports = () => {
               </div>
               
               <div style={styles.chartPreview}>
-                <div style={styles.miniBarChart}>
-                  {Object.entries(preview).map(([key, value], index) => {
-                    const maxVal = Math.max(...Object.values(preview).map(v => v || 0));
-                    const percentage = maxVal > 0 ? ((value || 0) / maxVal) * 100 : 0;
-                    const colors = ['#1a365d', '#059669', '#f59e0b', '#dc2626'];
-                    return (
-                      <div key={key} style={styles.miniBar}>
-                        <div style={styles.miniBarLabel}>{key.substring(0, 3)}</div>
-                        <div
-                          style={{
-                            ...styles.miniBarFill,
-                            width: `${percentage}%`,
-                            backgroundColor: colors[index % colors.length],
-                          }}
-                        >
-                          <span style={styles.miniBarValue}>{value || 0}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div style={styles.rechartsContainer}>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 40 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" angle={-20} textAnchor="end" interval={0} height={60} />
+                      <YAxis />
+                      <Tooltip
+                        formatter={(value) => formatNumberBR(value)}
+                        labelStyle={{ fontWeight: 700 }}
+                      />
+                      <Bar dataKey="value" fill="#1a365d" radius={[6, 6, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
             </>
@@ -418,6 +652,10 @@ const styles = {
     flexDirection: 'column',
     gap: '0.75rem',
   },
+  rechartsContainer: {
+    width: '100%',
+    height: '260px',
+  },
   miniBar: {
     display: 'flex',
     alignItems: 'center',
@@ -515,7 +753,7 @@ const styles = {
   },
   button: {
     padding: '1rem 2rem',
-    background: 'linear-gradient(135deg, #1a365d 0%, #2563eb 100%)',
+    backgroundImage: 'linear-gradient(135deg, #1a365d 0%, #2563eb 100%)',
     color: '#ffffff',
     border: 'none',
     borderRadius: '0.75rem',

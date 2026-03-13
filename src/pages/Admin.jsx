@@ -9,7 +9,6 @@ const notificationSchema = z.object({
   mensagem: z.string().min(10, 'Mensagem deve ter no mínimo 10 caracteres'),
   tipo: z.enum(['GERAL', 'INDIVIDUAL']),
   canal: z.enum(['INTERNA', 'EMAIL', 'WHATSAPP', 'MULTICANAL']),
-  usuarioEmail: z.string().email('Email inválido').optional(),
 });
 
 const userSchema = z.object({
@@ -64,6 +63,8 @@ const Admin = () => {
   });
 
   const tipoNotificacao = watchNotification('tipo');
+  const canalNotificacao = watchNotification('canal');
+  const [destinatarioEmail, setDestinatarioEmail] = useState('');
 
   useEffect(() => {
     fetchUsers();
@@ -87,9 +88,21 @@ const Admin = () => {
     setSuccessNotification(null);
 
     try {
-      await api.post('/notifications', data);
+      const payload = {
+        titulo: data.titulo,
+        mensagem: data.mensagem,
+        tipo: data.tipo,
+        canal: data.canal,
+      };
+
+      if (data.tipo === 'INDIVIDUAL' && (data.canal === 'EMAIL' || data.canal === 'MULTICANAL')) {
+        payload.destinatario = destinatarioEmail;
+      }
+
+      await api.post('/notifications', payload);
       setSuccessNotification('Notificação enviada com sucesso!');
       resetNotification();
+      setDestinatarioEmail('');
     } catch (err) {
       setErrorNotification(err.response?.data?.message || 'Erro ao enviar notificação');
     }
@@ -296,12 +309,13 @@ const Admin = () => {
               </div>
             </div>
 
-            {tipoNotificacao === 'INDIVIDUAL' && (
+            {tipoNotificacao === 'INDIVIDUAL' && (canalNotificacao === 'EMAIL' || canalNotificacao === 'MULTICANAL') && (
               <div style={styles.formGroup}>
                 <label style={styles.label}>Email do Usuário</label>
                 <input
                   type="email"
-                  {...registerNotification('usuarioEmail')}
+                  value={destinatarioEmail}
+                  onChange={(e) => setDestinatarioEmail(e.target.value)}
                   style={styles.input}
                   placeholder="email@exemplo.com"
                 />
