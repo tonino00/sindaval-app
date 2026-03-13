@@ -23,6 +23,8 @@ import AdminPayments from './pages/AdminPayments';
 import Reports from './pages/Reports';
 import Checkout from './pages/Checkout';
 import PaymentSuccess from './pages/PaymentSuccess';
+import TwoFactorLogin from './components/TwoFactorLogin';
+import TwoFactorSetup from './components/TwoFactorSetup';
 
 function App() {
   const dispatch = useDispatch();
@@ -50,6 +52,7 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/verify-2fa" element={<TwoFactorLogin />} />
       <Route path="/register" element={<Register />} />
 
       <Route
@@ -63,6 +66,7 @@ function App() {
         <Route index element={<RoleBasedRedirect />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="profile" element={<Profile />} />
+        <Route path="settings/2fa" element={<TwoFactorSetup />} />
         <Route path="payments" element={<Payments />} />
         <Route path="checkout" element={<Checkout />} />
         <Route path="payment-success" element={<PaymentSuccess />} />

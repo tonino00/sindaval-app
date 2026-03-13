@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useSelector, useDispatch } from 'react-redux';
+import { Link } from 'react-router-dom';
 import api, { API_URL } from '../services/api';
 import { getProfile } from '../features/auth/authSlice';
 
@@ -153,6 +154,34 @@ const Profile = () => {
           <h1 style={styles.title}>Meu Perfil</h1>
           <p style={styles.subtitle}>Gerencie suas informações pessoais e segurança</p>
         </div>
+      </div>
+
+      <div style={styles.securityCard}
+      >
+        <div style={styles.sectionHeader}>
+          <div style={styles.sectionIcon}>🔐</div>
+          <h2 style={styles.sectionTitle}>Segurança da Conta</h2>
+        </div>
+
+        <Link to="/settings/2fa" style={styles.securityLink}>
+          <button
+            type="button"
+            style={{
+              ...styles.securityButton,
+              ...(user?.isTwoFactorEnabled ? styles.securityButtonEnabled : {}),
+            }}
+          >
+            {user?.isTwoFactorEnabled
+              ? '✅ Autenticação de Dois Fatores (Ativa)'
+              : '🔐 Configurar Autenticação de Dois Fatores'}
+          </button>
+        </Link>
+
+        {user?.isTwoFactorEnabled && (
+          <div style={styles.securityHint}>
+            <strong>Importante:</strong> seu login exige código do autenticador. Guarde seus códigos de recuperação em local seguro.
+          </div>
+        )}
       </div>
 
       <div style={styles.grid}>
@@ -438,7 +467,7 @@ const Profile = () => {
 
 const styles = {
   container: {
-    maxWidth: '1000px',
+    maxWidth: '1400px',
     margin: '0 auto',
   },
   header: {
@@ -460,6 +489,40 @@ const styles = {
     fontSize: '1rem',
     color: '#6b7280',
     fontWeight: '400',
+  },
+  securityCard: {
+    backgroundColor: '#ffffff',
+    padding: '2rem',
+    borderRadius: '1rem',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+    border: '1px solid #e5e7eb',
+    marginBottom: '1.5rem',
+  },
+  securityLink: {
+    textDecoration: 'none',
+  },
+  securityButton: {
+    width: '100%',
+    padding: '0.875rem 1.25rem',
+    backgroundColor: '#1a365d',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '0.75rem',
+    cursor: 'pointer',
+    fontSize: '0.9375rem',
+    fontWeight: '700',
+  },
+  securityButtonEnabled: {
+    backgroundColor: '#10b981',
+  },
+  securityHint: {
+    marginTop: '1rem',
+    padding: '0.75rem 1rem',
+    backgroundColor: '#fff3cd',
+    border: '1px solid #ffeeba',
+    borderRadius: '0.75rem',
+    fontSize: '0.875rem',
+    color: '#856404',
   },
   headerBadge: {
     display: 'flex',
