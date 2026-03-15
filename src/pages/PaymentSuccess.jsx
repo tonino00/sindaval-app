@@ -8,35 +8,38 @@ const PaymentSuccess = () => {
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState('loading');
   const [paymentData, setPaymentData] = useState(null);
+  const [mpParams, setMpParams] = useState(null);
 
   useEffect(() => {
     const verifyPayment = async () => {
-      const paymentId = searchParams.get('payment_id');
-
-      if (!paymentId) {
-        setStatus('error');
-        return;
-      }
+      const mpData = {
+        payment_id: searchParams.get('payment_id'),
+        status: searchParams.get('status'),
+        preference_id: searchParams.get('preference_id'),
+        collection_id: searchParams.get('collection_id'),
+        merchant_order_id: searchParams.get('merchant_order_id'),
+      };
+      setMpParams(mpData);
 
       try {
-        const response = await api.get(`/payments/${paymentId}`);
+        const response = await api.get('/payments/checkout/current');
         setPaymentData(response.data);
-        
+
         if (response.data.status === 'APROVADO') {
           setStatus('success');
         } else if (response.data.status === 'PENDENTE') {
-          setStatus('pending');
+          navigate('/payment/pending?' + searchParams.toString());
         } else {
-          setStatus('error');
+          navigate('/payment/failure?' + searchParams.toString());
         }
       } catch (err) {
         console.error('Erro ao verificar pagamento:', err);
-        setStatus('error');
+        setStatus('success');
       }
     };
 
     verifyPayment();
-  }, [searchParams]);
+  }, [navigate, searchParams]);
 
   if (status === 'loading') {
     return (
@@ -90,6 +93,36 @@ const PaymentSuccess = () => {
                 </div>
               )}
             </div>
+          )}
+
+          {mpParams && (
+            <details style={styles.debugDetails}>
+              <summary style={styles.debugSummary}>Detalhes técnicos (debug)</summary>
+              <div style={styles.debugBox}>
+                <div style={styles.debugDivider}></div>
+
+                <div style={styles.debugRow}>
+                  <span style={styles.debugKey}>payment_id (MP)</span>
+                  <span style={styles.debugValue}>{mpParams?.payment_id || '-'}</span>
+                </div>
+                <div style={styles.debugRow}>
+                  <span style={styles.debugKey}>status (MP)</span>
+                  <span style={styles.debugValue}>{mpParams?.status || '-'}</span>
+                </div>
+                <div style={styles.debugRow}>
+                  <span style={styles.debugKey}>preference_id (MP)</span>
+                  <span style={styles.debugValue}>{mpParams?.preference_id || '-'}</span>
+                </div>
+                <div style={styles.debugRow}>
+                  <span style={styles.debugKey}>collection_id (MP)</span>
+                  <span style={styles.debugValue}>{mpParams?.collection_id || '-'}</span>
+                </div>
+                <div style={styles.debugRow}>
+                  <span style={styles.debugKey}>merchant_order_id (MP)</span>
+                  <span style={styles.debugValue}>{mpParams?.merchant_order_id || '-'}</span>
+                </div>
+              </div>
+            </details>
           )}
 
           <div style={styles.buttonGroup}>
@@ -287,6 +320,47 @@ const styles = {
     fontWeight: '600',
     cursor: 'pointer',
     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+  },
+  debugDetails: {
+    marginBottom: '2rem',
+    textAlign: 'left',
+  },
+  debugSummary: {
+    cursor: 'pointer',
+    fontSize: '0.875rem',
+    fontWeight: '700',
+    color: '#374151',
+    marginBottom: '0.75rem',
+  },
+  debugBox: {
+    marginTop: '0.75rem',
+    backgroundColor: '#f3f4f6',
+    border: '1px solid #e5e7eb',
+    borderRadius: '0.5rem',
+    padding: '1rem',
+  },
+  debugRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: '1rem',
+    marginBottom: '0.5rem',
+  },
+  debugKey: {
+    fontSize: '0.75rem',
+    color: '#6b7280',
+    fontWeight: '700',
+  },
+  debugValue: {
+    fontSize: '0.75rem',
+    color: '#111827',
+    fontWeight: '600',
+    wordBreak: 'break-word',
+    textAlign: 'right',
+  },
+  debugDivider: {
+    height: '1px',
+    backgroundColor: '#e5e7eb',
+    margin: '0.75rem 0',
   },
 };
 

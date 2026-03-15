@@ -23,6 +23,8 @@ import AdminPayments from './pages/AdminPayments';
 import Reports from './pages/Reports';
 import Checkout from './pages/Checkout';
 import PaymentSuccess from './pages/PaymentSuccess';
+import PaymentFailure from './pages/PaymentFailure';
+import PaymentPending from './pages/PaymentPending';
 import TwoFactorLogin from './components/TwoFactorLogin';
 import TwoFactorSetup from './components/TwoFactorSetup';
 
@@ -54,6 +56,10 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/verify-2fa" element={<TwoFactorLogin />} />
       <Route path="/register" element={<Register />} />
+
+      <Route path="/payment/success" element={<PaymentSuccess />} />
+      <Route path="/payment/failure" element={<PaymentFailure />} />
+      <Route path="/payment/pending" element={<PaymentPending />} />
 
       <Route
         path="/"

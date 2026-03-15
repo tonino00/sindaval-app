@@ -1,34 +1,68 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import api from '../services/api';
+import mpLogo from '../assets/mp-logo.png';
 
 const Checkout = () => {
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [paymentMethod, setPaymentMethod] = useState('PIX');
-  const [amount] = useState(150.00);
+  const [paymentMethod, setPaymentMethod] = useState('CARTAO');
+  const [amount] = useState(200.0);
+  const lastTriggeredMethodRef = useRef(null);
+
+  const buildCheckoutPayload = (metodo) => ({
+    valor: amount,
+    metodo,
+  });
 
   const handleCheckout = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await api.post('/payments/checkout', {
-        amount,
-        paymentMethod,
-        description: `Mensalidade - ${new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}`,
-      });
+      const response = await api.post('/payments/checkout', buildCheckoutPayload(paymentMethod));
 
-      if (response.data.paymentUrl) {
-        window.location.href = response.data.paymentUrl;
+      const nextPaymentId = response.data.paymentId;
+      const nextPreferenceId = response.data.preferenceId;
+      const nextUrl = response.data.initPoint || response.data.sandboxInitPoint || response.data.paymentUrl;
+
+      if (nextUrl) {
+        window.location.href = nextUrl;
       } else {
         setError('Erro ao gerar link de pagamento');
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Erro ao processar pagamento');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectPaymentMethod = async (nextMethod) => {
+    if (loading) return;
+
+    setPaymentMethod(nextMethod);
+    lastTriggeredMethodRef.current = nextMethod;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await api.post('/payments/checkout', buildCheckoutPayload(nextMethod));
+
+      const nextUrl = response.data.initPoint || response.data.sandboxInitPoint || response.data.paymentUrl;
+
+      if (nextUrl) {
+        window.location.href = nextUrl;
+      } else {
+        setError('Erro ao gerar link de pagamento');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Erro ao processar pagamento');
+    } finally {
       setLoading(false);
     }
   };
@@ -79,44 +113,22 @@ const Checkout = () => {
 
             <div style={styles.paymentMethods}>
               <button
-                onClick={() => setPaymentMethod('PIX')}
+                onClick={() => handleSelectPaymentMethod('CARTAO')}
                 style={{
                   ...styles.methodButton,
-                  ...(paymentMethod === 'PIX' ? styles.methodButtonActive : {}),
+                  ...(paymentMethod === 'CARTAO' ? styles.methodButtonActive : {}),
                 }}
               >
-                <div style={styles.methodIcon}>💳</div>
-                <div style={styles.methodInfo}>
-                  <h3 style={styles.methodName}>Pix</h3>
-                  <p style={styles.methodDescription}>Aprovação instantânea</p>
+                <div style={styles.methodIcon}>
+                  <img
+                    src={mpLogo}
+                    alt="Mercado Pago"
+                    style={styles.methodIconImage}
+                  />
                 </div>
-              </button>
-
-              <button
-                onClick={() => setPaymentMethod('CARTAO_CREDITO')}
-                style={{
-                  ...styles.methodButton,
-                  ...(paymentMethod === 'CARTAO_CREDITO' ? styles.methodButtonActive : {}),
-                }}
-              >
-                <div style={styles.methodIcon}>💳</div>
                 <div style={styles.methodInfo}>
-                  <h3 style={styles.methodName}>Cartão de Crédito</h3>
-                  <p style={styles.methodDescription}>Parcelamento disponível</p>
-                </div>
-              </button>
-
-              <button
-                onClick={() => setPaymentMethod('CARTAO_DEBITO')}
-                style={{
-                  ...styles.methodButton,
-                  ...(paymentMethod === 'CARTAO_DEBITO' ? styles.methodButtonActive : {}),
-                }}
-              >
-                <div style={styles.methodIcon}>💳</div>
-                <div style={styles.methodInfo}>
-                  <h3 style={styles.methodName}>Cartão de Débito</h3>
-                  <p style={styles.methodDescription}>Aprovação geralmente imediata</p>
+                  <h3 style={styles.methodName}>Mercado Pago</h3>
+                  <p style={styles.methodDescription}>Pix ou cartão (ambiente seguro)</p>
                 </div>
               </button>
             </div>
@@ -265,7 +277,9 @@ const styles = {
     gap: '1rem',
     padding: '1rem',
     backgroundColor: '#ffffff',
-    border: '2px solid #e5e7eb',
+    borderWidth: '2px',
+    borderStyle: 'solid',
+    borderColor: '#e5e7eb',
     borderRadius: '0.5rem',
     cursor: 'pointer',
     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -279,7 +293,21 @@ const styles = {
     boxShadow: '0 0 0 3px rgba(26, 54, 93, 0.12)',
   },
   methodIcon: {
-    fontSize: '2rem',
+    width: '3rem',
+    height: '3rem',
+    borderRadius: '0.75rem',
+    backgroundColor: '#ffffff',
+    border: '1px solid #e5e7eb',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  methodIconImage: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'contain',
+    padding: '0.5rem',
   },
   methodInfo: {
     flex: 1,
