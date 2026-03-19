@@ -123,7 +123,7 @@ const Dashboard = () => {
                   </div>
                   <div style={styles.listItemRight}>
                     <p style={styles.listItemAmount}>
-                      R$ {payment.valor?.toFixed(2)}
+                      R$ {Number(payment.valor || 0).toFixed(2).replace('.', ',')}
                     </p>
                     <span
                       style={{
