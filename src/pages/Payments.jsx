@@ -130,7 +130,7 @@ const Payments = () => {
                 <p style={styles.detailLabel}>Data:</p>
                 <p style={styles.detailValue}>{formatDate(payment.createdAt)}</p>
                 <p style={styles.detailLabel}>Valor:</p>
-                <p style={styles.detailValue}>R$ {payment.valor.toFixed(2)}</p>
+                <p style={styles.detailValue}>R$ {Number(payment.valor || 0).toFixed(2).replace('.', ',')}</p>
                 <p style={styles.detailLabel}>Status:</p>
                 <p style={styles.detailValue}>{payment.status}</p>
               </div>
