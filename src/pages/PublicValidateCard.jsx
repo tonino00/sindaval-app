@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import axios from 'axios';
+import { API_URL as BACKEND_URL } from '../services/api';
 
 const PublicValidateCard = () => {
   const { token } = useParams();
@@ -16,15 +16,23 @@ const PublicValidateCard = () => {
         setLoading(true);
         setError(null);
 
-        const response = await axios.get(`/api/v1/public/validar/${encodeURIComponent(token)}`, {
-          withCredentials: false,
-        });
+        const response = await fetch(
+          `${BACKEND_URL.replace(/\/$/, '')}/api/v1/public/validar/${encodeURIComponent(token)}`,
+          {
+            method: 'GET',
+            credentials: 'omit',
+          },
+        );
+        if (!response.ok) {
+          throw new Error('HTTP_ERROR');
+        }
+        const payload = await response.json();
         if (!mounted) return;
 
-        setData(response.data);
+        setData(payload);
       } catch (err) {
         if (!mounted) return;
-        setError(err.response?.data?.message || 'Não foi possível validar a carteira.');
+        setError('Não foi possível validar a carteira.');
       } finally {
         if (!mounted) return;
         setLoading(false);
