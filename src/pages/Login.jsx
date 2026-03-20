@@ -37,7 +37,10 @@ const Login = () => {
   }, [dispatch]);
 
   const onSubmit = async (data) => {
-    await dispatch(login(data));
+    const result = await dispatch(login(data));
+    if (login.fulfilled.match(result) && result.payload?.requiresTwoFactor) {
+      navigate('/verify-2fa');
+    }
   };
 
   return (

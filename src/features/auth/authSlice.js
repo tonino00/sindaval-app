@@ -8,6 +8,7 @@ const initialState = {
   loading: false,
   error: null,
   initialized: false, // Flag para controlar se verificação inicial foi feita
+  pendingTwoFactor: null,
 };
 
 const decodeUser = (user) => {
@@ -22,6 +23,7 @@ const decodeUser = (user) => {
     role: user.role,
     status: user.status,
     createdAt: user.createdAt,
+    isTwoFactorEnabled: user.isTwoFactorEnabled,
   };
 };
 
@@ -30,10 +32,34 @@ export const login = createAsyncThunk(
   async ({ email, password }, { rejectWithValue }) => {
     try {
       const response = await api.post('/auth/login', { email, password });
-      return decodeUser(response.data.user);
+
+      if (response.data?.requiresTwoFactor) {
+        return { requiresTwoFactor: true, email, password };
+      }
+
+      return { requiresTwoFactor: false, user: decodeUser(response.data.user) };
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || 'Erro ao fazer login'
+      );
+    }
+  }
+);
+
+export const login2fa = createAsyncThunk(
+  'auth/login2fa',
+  async ({ email, password, twoFactorToken, recoveryCode }, { rejectWithValue }) => {
+    try {
+      const response = await api.post('/auth/login/2fa', {
+        email,
+        password,
+        ...(twoFactorToken ? { twoFactorToken } : {}),
+        ...(recoveryCode ? { recoveryCode } : {}),
+      });
+      return decodeUser(response.data.user);
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Erro ao validar 2FA'
       );
     }
   }
@@ -71,8 +97,8 @@ export const getProfile = createAsyncThunk(
   'auth/getProfile',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get('/users/me');
-      return response.data;
+      const response = await api.get('/auth/me');
+      return decodeUser(response.data?.user);
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || 'Erro ao buscar perfil'
@@ -94,11 +120,25 @@ const authSlice = createSlice({
       .addCase(login.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.pendingTwoFactor = null;
       })
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
+        if (action.payload?.requiresTwoFactor) {
+          state.isAuthenticated = false;
+          state.user = null;
+          state.pendingTwoFactor = {
+            email: action.payload.email,
+            password: action.payload.password,
+          };
+          state.error = null;
+          state.initialized = true;
+          return;
+        }
+
         state.isAuthenticated = true;
-        state.user = action.payload;
+        state.user = action.payload.user;
+        state.pendingTwoFactor = null;
         state.error = null;
         state.initialized = true;
       })
@@ -107,6 +147,27 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
         state.error = action.payload;
+        state.initialized = true;
+        state.pendingTwoFactor = null;
+      })
+      .addCase(login2fa.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(login2fa.fulfilled, (state, action) => {
+        state.loading = false;
+        state.isAuthenticated = true;
+        state.user = action.payload;
+        state.pendingTwoFactor = null;
+        state.error = null;
+        state.initialized = true;
+      })
+      .addCase(login2fa.rejected, (state, action) => {
+        state.loading = false;
+        state.isAuthenticated = false;
+        state.user = null;
+        state.error = action.payload;
+        state.pendingTwoFactor = state.pendingTwoFactor;
         state.initialized = true;
       })
       .addCase(refreshToken.pending, (state) => {
@@ -149,6 +210,7 @@ const authSlice = createSlice({
         state.user = action.payload;
         state.isAuthenticated = true;
         state.initialized = true;
+        state.pendingTwoFactor = null;
       })
       .addCase(getProfile.rejected, (state) => {
         state.loading = false;
