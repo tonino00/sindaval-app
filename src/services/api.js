@@ -5,8 +5,12 @@ export const API_URL =
   import.meta.env.VITE_API_URL ||
   (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001');
 
+const apiBaseURL = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api/v1`
+  : '/api/v1';
+
 const api = axios.create({
-  baseURL: '/api/v1',
+  baseURL: apiBaseURL,
   headers: {
     'Content-Type': 'application/json',
   },
