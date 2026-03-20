@@ -22,6 +22,7 @@ const userSchema = z.object({
 });
 
 const Admin = () => {
+  const SHOW_CREATE_USER_CARD = false;
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -331,135 +332,137 @@ const Admin = () => {
           </form>
         </div>
 
-        <div style={styles.section}>
-          <div style={styles.sectionHeader}>
-            <div style={styles.sectionIcon}>👤</div>
-            <h2 style={styles.sectionTitle}>Criar Novo Usuário</h2>
-          </div>
-          <form onSubmit={handleSubmitUser(onSubmitUser)} style={styles.form}>
-            {/* Campo de Upload de Foto */}
-            <div style={styles.photoUploadSection}>
-              <label style={styles.label}>Foto do Usuário</label>
-              <div style={styles.photoUploadContainer}>
-                {photoPreview ? (
-                  <div style={styles.photoPreviewWrapper}>
-                    <img src={photoPreview} alt="Preview" style={styles.photoPreview} />
-                    <button
-                      type="button"
-                      onClick={handleRemovePhoto}
-                      style={styles.removePhotoButton}
-                    >
-                      ✕ Remover
-                    </button>
-                  </div>
-                ) : (
-                  <label style={styles.photoUploadLabel}>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handlePhotoChange}
-                      style={styles.photoInput}
-                    />
-                    <div style={styles.photoUploadPlaceholder}>
-                      <span style={styles.photoUploadIcon}>📷</span>
-                      <span style={styles.photoUploadText}>Clique para adicionar foto</span>
-                      <span style={styles.photoUploadHint}>JPG, PNG ou GIF</span>
+        {SHOW_CREATE_USER_CARD && (
+          <div style={styles.section}>
+            <div style={styles.sectionHeader}>
+              <div style={styles.sectionIcon}>👤</div>
+              <h2 style={styles.sectionTitle}>Criar Novo Usuário</h2>
+            </div>
+            <form onSubmit={handleSubmitUser(onSubmitUser)} style={styles.form}>
+              {/* Campo de Upload de Foto */}
+              <div style={styles.photoUploadSection}>
+                <label style={styles.label}>Foto do Usuário</label>
+                <div style={styles.photoUploadContainer}>
+                  {photoPreview ? (
+                    <div style={styles.photoPreviewWrapper}>
+                      <img src={photoPreview} alt="Preview" style={styles.photoPreview} />
+                      <button
+                        type="button"
+                        onClick={handleRemovePhoto}
+                        style={styles.removePhotoButton}
+                      >
+                        ✕ Remover
+                      </button>
                     </div>
-                  </label>
+                  ) : (
+                    <label style={styles.photoUploadLabel}>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoChange}
+                        style={styles.photoInput}
+                      />
+                      <div style={styles.photoUploadPlaceholder}>
+                        <span style={styles.photoUploadIcon}>📷</span>
+                        <span style={styles.photoUploadText}>Clique para adicionar foto</span>
+                        <span style={styles.photoUploadHint}>JPG, PNG ou GIF</span>
+                      </div>
+                    </label>
+                  )}
+                </div>
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Nome Completo</label>
+                <input
+                  type="text"
+                  {...registerUser('nomeCompleto')}
+                  style={styles.input}
+                  placeholder="Nome completo"
+                />
+                {errorsUser.nomeCompleto && (
+                  <span style={styles.errorText}>{errorsUser.nomeCompleto.message}</span>
                 )}
               </div>
-            </div>
 
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Nome Completo</label>
-              <input
-                type="text"
-                {...registerUser('nomeCompleto')}
-                style={styles.input}
-                placeholder="Nome completo"
-              />
-              {errorsUser.nomeCompleto && (
-                <span style={styles.errorText}>{errorsUser.nomeCompleto.message}</span>
-              )}
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Email</label>
-              <input
-                type="email"
-                {...registerUser('email')}
-                style={styles.input}
-                placeholder="email@exemplo.com"
-              />
-              {errorsUser.email && (
-                <span style={styles.errorText}>{errorsUser.email.message}</span>
-              )}
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>CPF</label>
-              <input
-                type="text"
-                {...registerUser('cpf')}
-                style={styles.input}
-                placeholder="000.000.000-00"
-              />
-              {errorsUser.cpf && (
-                <span style={styles.errorText}>{errorsUser.cpf.message}</span>
-              )}
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Senha</label>
-              <input
-                type="password"
-                {...registerUser('password')}
-                style={styles.input}
-                placeholder="Senha"
-              />
-              {errorsUser.password && (
-                <span style={styles.errorText}>{errorsUser.password.message}</span>
-              )}
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Número OAB (opcional)</label>
-              <input
-                type="text"
-                {...registerUser('numeroOAB')}
-                style={styles.input}
-                placeholder="OAB123456"
-              />
-            </div>
-
-            <div style={styles.formRow}>
               <div style={styles.formGroup}>
-                <label style={styles.label}>Perfil</label>
-                <select {...registerUser('role')} style={styles.select}>
-                  <option value="SINDICALIZADO">Sindicalizado</option>
-                  <option value="FINANCEIRO">Financeiro</option>
-                  <option value="ADMIN">Admin</option>
-                </select>
+                <label style={styles.label}>Email</label>
+                <input
+                  type="email"
+                  {...registerUser('email')}
+                  style={styles.input}
+                  placeholder="email@exemplo.com"
+                />
+                {errorsUser.email && (
+                  <span style={styles.errorText}>{errorsUser.email.message}</span>
+                )}
               </div>
 
               <div style={styles.formGroup}>
-                <label style={styles.label}>Status</label>
-                <select {...registerUser('status')} style={styles.select}>
-                  <option value="ATIVO">Ativo</option>
-                  <option value="INADIMPLENTE">Inadimplente</option>
-                  <option value="INATIVO">Inativo</option>
-                </select>
+                <label style={styles.label}>CPF</label>
+                <input
+                  type="text"
+                  {...registerUser('cpf')}
+                  style={styles.input}
+                  placeholder="000.000.000-00"
+                />
+                {errorsUser.cpf && (
+                  <span style={styles.errorText}>{errorsUser.cpf.message}</span>
+                )}
               </div>
-            </div>
 
-            {error && <div style={styles.errorBox}>{error}</div>}
-            {success && <div style={styles.successBox}>{success}</div>}
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Senha</label>
+                <input
+                  type="password"
+                  {...registerUser('password')}
+                  style={styles.input}
+                  placeholder="Senha"
+                />
+                {errorsUser.password && (
+                  <span style={styles.errorText}>{errorsUser.password.message}</span>
+                )}
+              </div>
 
-            <button type="submit" style={styles.button}>
-              Criar Usuário
-            </button>
-          </form>
-        </div>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Número OAB (opcional)</label>
+                <input
+                  type="text"
+                  {...registerUser('numeroOAB')}
+                  style={styles.input}
+                  placeholder="OAB123456"
+                />
+              </div>
+
+              <div style={styles.formRow}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Perfil</label>
+                  <select {...registerUser('role')} style={styles.select}>
+                    <option value="SINDICALIZADO">Sindicalizado</option>
+                    <option value="FINANCEIRO">Financeiro</option>
+                    <option value="ADMIN">Admin</option>
+                  </select>
+                </div>
+
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Status</label>
+                  <select {...registerUser('status')} style={styles.select}>
+                    <option value="ATIVO">Ativo</option>
+                    <option value="INADIMPLENTE">Inadimplente</option>
+                    <option value="INATIVO">Inativo</option>
+                  </select>
+                </div>
+              </div>
+
+              {error && <div style={styles.errorBox}>{error}</div>}
+              {success && <div style={styles.successBox}>{success}</div>}
+
+              <button type="submit" style={styles.button}>
+                Criar Usuário
+              </button>
+            </form>
+          </div>
+        )}
       </div>
 
       <div style={styles.tableSection}>
