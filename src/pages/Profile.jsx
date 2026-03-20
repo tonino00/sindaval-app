@@ -192,7 +192,7 @@ const Profile = () => {
         )}
       </div>
 
-      <div style={styles.grid}>
+      <div className="profile-grid">
         <div style={styles.section}>
           <div style={styles.sectionHeader}>
             <div style={styles.sectionIcon}>📷</div>
@@ -605,6 +605,7 @@ const styles = {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 450px), 1fr))',
     gap: '1.5rem',
+    alignItems: 'start',
   },
   section: {
     backgroundColor: '#ffffff',
@@ -661,12 +662,12 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '1.5rem',
-    padding: '1rem',
+    gap: '1rem',
+    padding: 0,
   },
   photoPreview: {
-    width: '150px',
-    height: '150px',
+    width: '120px',
+    height: '120px',
     borderRadius: '50%',
     overflow: 'hidden',
     border: '4px solid #1a365d',
@@ -685,7 +686,7 @@ const styles = {
     justifyContent: 'center',
     backgroundColor: '#1a365d',
     color: '#ffffff',
-    fontSize: '3rem',
+    fontSize: '2.25rem',
     fontWeight: '700',
   },
   photoActions: {
