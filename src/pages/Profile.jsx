@@ -193,249 +193,253 @@ const Profile = () => {
       </div>
 
       <div className="profile-grid">
-        <div style={styles.section}>
-          <div style={styles.sectionHeader}>
-            <div style={styles.sectionIcon}>📷</div>
-            <h2 style={styles.sectionTitle}>Foto de Perfil</h2>
+        <div className="profile-col">
+          <div style={styles.section}>
+            <div style={styles.sectionHeader}>
+              <div style={styles.sectionIcon}>📷</div>
+              <h2 style={styles.sectionTitle}>Foto de Perfil</h2>
+            </div>
+            <div style={styles.photoSection}>
+              <div style={styles.photoPreview}>
+                {photoPreview ? (
+                  <img src={photoPreview} alt="Preview" style={styles.photoImage} />
+                ) : user?.fotoUrl ? (
+                  <img src={user.fotoUrl} alt={user.nomeCompleto} style={styles.photoImage} />
+                ) : (
+                  <div style={styles.photoPlaceholder}>
+                    {user?.nomeCompleto?.charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
+              <div style={styles.photoActions}>
+                <label htmlFor="photo-upload" style={styles.photoButton}>
+                  {loadingPhoto ? 'Enviando...' : 'Escolher Foto'}
+                </label>
+                <input
+                  id="photo-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoChange}
+                  style={styles.photoInput}
+                  disabled={loadingPhoto}
+                />
+                <p style={styles.photoHint}>JPG, PNG ou GIF (máx. 5MB)</p>
+              </div>
+            </div>
+            {errorPhoto && <div style={styles.errorBox}>{errorPhoto}</div>}
+            {successPhoto && <div style={styles.successBox}>{successPhoto}</div>}
           </div>
-          <div style={styles.photoSection}>
-            <div style={styles.photoPreview}>
-              {photoPreview ? (
-                <img src={photoPreview} alt="Preview" style={styles.photoImage} />
-              ) : user?.fotoUrl ? (
-                <img src={user.fotoUrl} alt={user.nomeCompleto} style={styles.photoImage} />
-              ) : (
-                <div style={styles.photoPlaceholder}>
-                  {user?.nomeCompleto?.charAt(0).toUpperCase()}
+
+          <div style={styles.section}>
+            <div style={styles.sectionHeader}>
+              <div style={styles.sectionIcon}>�</div>
+              <h2 style={styles.sectionTitle}>Alterar Senha</h2>
+            </div>
+            <form onSubmit={handleSubmitPassword(onSubmitPassword)} style={styles.form}>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Senha Atual</label>
+                <input
+                  type="password"
+                  {...registerPassword('currentPassword')}
+                  style={styles.input}
+                  disabled={loadingPassword}
+                />
+                {errorsPassword.currentPassword && (
+                  <span style={styles.errorText}>{errorsPassword.currentPassword.message}</span>
+                )}
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Nova Senha</label>
+                <input
+                  type="password"
+                  {...registerPassword('newPassword')}
+                  style={styles.input}
+                  disabled={loadingPassword}
+                />
+                {errorsPassword.newPassword && (
+                  <span style={styles.errorText}>{errorsPassword.newPassword.message}</span>
+                )}
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Confirmar Nova Senha</label>
+                <input
+                  type="password"
+                  {...registerPassword('confirmPassword')}
+                  style={styles.input}
+                  disabled={loadingPassword}
+                />
+                {errorsPassword.confirmPassword && (
+                  <span style={styles.errorText}>{errorsPassword.confirmPassword.message}</span>
+                )}
+              </div>
+
+              {errorPassword && <div style={styles.errorBox}>{errorPassword}</div>}
+              {successPassword && <div style={styles.successBox}>{successPassword}</div>}
+
+              <button
+                type="submit"
+                disabled={loadingPassword}
+                style={{
+                  ...styles.button,
+                  ...(loadingPassword ? styles.buttonDisabled : {}),
+                }}
+              >
+                {loadingPassword ? 'Alterando...' : 'Alterar Senha'}
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <div className="profile-col">
+          <div style={styles.section}>
+            <div style={styles.sectionHeader}>
+              <div style={styles.sectionIcon}>👤</div>
+              <h2 style={styles.sectionTitle}>Informações Pessoais</h2>
+            </div>
+            <form onSubmit={handleSubmitProfile(onSubmitProfile)} style={styles.form}>
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Nome Completo</label>
+                <input
+                  type="text"
+                  {...registerProfile('nomeCompleto')}
+                  style={styles.input}
+                  disabled={loadingProfile}
+                />
+                {errorsProfile.nomeCompleto && (
+                  <span style={styles.errorText}>{errorsProfile.nomeCompleto.message}</span>
+                )}
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Email</label>
+                <input
+                  type="email"
+                  {...registerProfile('email')}
+                  style={styles.input}
+                  disabled={loadingProfile}
+                />
+                {errorsProfile.email && (
+                  <span style={styles.errorText}>{errorsProfile.email.message}</span>
+                )}
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Número OAB</label>
+                <input
+                  type="text"
+                  {...registerProfile('numeroOAB')}
+                  style={styles.input}
+                  disabled={loadingProfile}
+                  placeholder="Ex: OAB123456"
+                />
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Telefone</label>
+                <input
+                  type="text"
+                  {...registerProfile('telefone')}
+                  style={styles.input}
+                  disabled={loadingProfile}
+                  placeholder="(DDD) 99999-9999"
+                />
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Instagram</label>
+                <input
+                  type="text"
+                  {...registerProfile('instagram')}
+                  style={styles.input}
+                  disabled={loadingProfile}
+                  placeholder="@seuusuario"
+                />
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Endereço Residencial</label>
+                <input
+                  type="text"
+                  {...registerProfile('enderecoResidencial')}
+                  style={styles.input}
+                  disabled={loadingProfile}
+                  placeholder="Rua, número, bairro, cidade/UF"
+                />
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Endereço Profissional</label>
+                <input
+                  type="text"
+                  {...registerProfile('enderecoProfissional')}
+                  style={styles.input}
+                  disabled={loadingProfile}
+                  placeholder="Rua, número, bairro, cidade/UF"
+                />
+              </div>
+
+              {errorProfile && <div style={styles.errorBox}>{errorProfile}</div>}
+              {successProfile && <div style={styles.successBox}>{successProfile}</div>}
+
+              <button
+                type="submit"
+                disabled={loadingProfile}
+                style={{
+                  ...styles.button,
+                  ...(loadingProfile ? styles.buttonDisabled : {}),
+                }}
+              >
+                {loadingProfile ? 'Salvando...' : 'Salvar Alterações'}
+              </button>
+            </form>
+          </div>
+
+          <div style={styles.section}>
+            <div style={styles.sectionHeader}>
+              <div style={styles.sectionIcon}>📋</div>
+              <h2 style={styles.sectionTitle}>Status da Associação</h2>
+            </div>
+            <div style={styles.infoBox}>
+              <div style={styles.infoRow}>
+                <span style={styles.infoLabel}>Status:</span>
+                <span
+                  style={{
+                    ...styles.statusBadge,
+                    ...(user?.status === 'ATIVO' ? styles.statusActive : {}),
+                    ...(user?.status === 'INADIMPLENTE' ? styles.statusWarning : {}),
+                    ...(user?.status === 'INATIVO' ? styles.statusInactive : {}),
+                  }}
+                >
+                  {user?.status || 'N/A'}
+                </span>
+              </div>
+              <div style={styles.infoRow}>
+                <span style={styles.infoLabel}>Perfil:</span>
+                <span style={styles.infoValue}>
+                  {user?.role === 'ADMIN' && 'Administrador'}
+                  {user?.role === 'FINANCEIRO' && 'Financeiro'}
+                  {user?.role === 'SINDICALIZADO' && 'Sindicalizado'}
+                </span>
+              </div>
+              {user?.dataVencimento && (
+                <div style={styles.infoRow}>
+                  <span style={styles.infoLabel}>Vencimento:</span>
+                  <span style={styles.infoValue}>
+                    {new Date(user.dataVencimento).toLocaleDateString('pt-BR')}
+                  </span>
+                </div>
+              )}
+              {user?.createdAt && (
+                <div style={styles.infoRow}>
+                  <span style={styles.infoLabel}>Membro desde:</span>
+                  <span style={styles.infoValue}>
+                    {new Date(user.createdAt).toLocaleDateString('pt-BR')}
+                  </span>
                 </div>
               )}
             </div>
-            <div style={styles.photoActions}>
-              <label htmlFor="photo-upload" style={styles.photoButton}>
-                {loadingPhoto ? 'Enviando...' : 'Escolher Foto'}
-              </label>
-              <input
-                id="photo-upload"
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoChange}
-                style={styles.photoInput}
-                disabled={loadingPhoto}
-              />
-              <p style={styles.photoHint}>JPG, PNG ou GIF (máx. 5MB)</p>
-            </div>
-          </div>
-          {errorPhoto && <div style={styles.errorBox}>{errorPhoto}</div>}
-          {successPhoto && <div style={styles.successBox}>{successPhoto}</div>}
-        </div>
-
-        <div style={styles.section}>
-          <div style={styles.sectionHeader}>
-            <div style={styles.sectionIcon}>👤</div>
-            <h2 style={styles.sectionTitle}>Informações Pessoais</h2>
-          </div>
-          <form onSubmit={handleSubmitProfile(onSubmitProfile)} style={styles.form}>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Nome Completo</label>
-              <input
-                type="text"
-                {...registerProfile('nomeCompleto')}
-                style={styles.input}
-                disabled={loadingProfile}
-              />
-              {errorsProfile.nomeCompleto && (
-                <span style={styles.errorText}>{errorsProfile.nomeCompleto.message}</span>
-              )}
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Email</label>
-              <input
-                type="email"
-                {...registerProfile('email')}
-                style={styles.input}
-                disabled={loadingProfile}
-              />
-              {errorsProfile.email && (
-                <span style={styles.errorText}>{errorsProfile.email.message}</span>
-              )}
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Número OAB</label>
-              <input
-                type="text"
-                {...registerProfile('numeroOAB')}
-                style={styles.input}
-                disabled={loadingProfile}
-                placeholder="Ex: OAB123456"
-              />
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Telefone</label>
-              <input
-                type="text"
-                {...registerProfile('telefone')}
-                style={styles.input}
-                disabled={loadingProfile}
-                placeholder="(DDD) 99999-9999"
-              />
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Instagram</label>
-              <input
-                type="text"
-                {...registerProfile('instagram')}
-                style={styles.input}
-                disabled={loadingProfile}
-                placeholder="@seuusuario"
-              />
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Endereço Residencial</label>
-              <input
-                type="text"
-                {...registerProfile('enderecoResidencial')}
-                style={styles.input}
-                disabled={loadingProfile}
-                placeholder="Rua, número, bairro, cidade/UF"
-              />
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Endereço Profissional</label>
-              <input
-                type="text"
-                {...registerProfile('enderecoProfissional')}
-                style={styles.input}
-                disabled={loadingProfile}
-                placeholder="Rua, número, bairro, cidade/UF"
-              />
-            </div>
-
-            {errorProfile && <div style={styles.errorBox}>{errorProfile}</div>}
-            {successProfile && <div style={styles.successBox}>{successProfile}</div>}
-
-            <button
-              type="submit"
-              disabled={loadingProfile}
-              style={{
-                ...styles.button,
-                ...(loadingProfile ? styles.buttonDisabled : {}),
-              }}
-            >
-              {loadingProfile ? 'Salvando...' : 'Salvar Alterações'}
-            </button>
-          </form>
-        </div>
-
-        <div style={styles.section}>
-          <div style={styles.sectionHeader}>
-            <div style={styles.sectionIcon}>🔐</div>
-            <h2 style={styles.sectionTitle}>Alterar Senha</h2>
-          </div>
-          <form onSubmit={handleSubmitPassword(onSubmitPassword)} style={styles.form}>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Senha Atual</label>
-              <input
-                type="password"
-                {...registerPassword('currentPassword')}
-                style={styles.input}
-                disabled={loadingPassword}
-              />
-              {errorsPassword.currentPassword && (
-                <span style={styles.errorText}>{errorsPassword.currentPassword.message}</span>
-              )}
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Nova Senha</label>
-              <input
-                type="password"
-                {...registerPassword('newPassword')}
-                style={styles.input}
-                disabled={loadingPassword}
-              />
-              {errorsPassword.newPassword && (
-                <span style={styles.errorText}>{errorsPassword.newPassword.message}</span>
-              )}
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Confirmar Nova Senha</label>
-              <input
-                type="password"
-                {...registerPassword('confirmPassword')}
-                style={styles.input}
-                disabled={loadingPassword}
-              />
-              {errorsPassword.confirmPassword && (
-                <span style={styles.errorText}>{errorsPassword.confirmPassword.message}</span>
-              )}
-            </div>
-
-            {errorPassword && <div style={styles.errorBox}>{errorPassword}</div>}
-            {successPassword && <div style={styles.successBox}>{successPassword}</div>}
-
-            <button
-              type="submit"
-              disabled={loadingPassword}
-              style={{
-                ...styles.button,
-                ...(loadingPassword ? styles.buttonDisabled : {}),
-              }}
-            >
-              {loadingPassword ? 'Alterando...' : 'Alterar Senha'}
-            </button>
-          </form>
-        </div>
-
-        <div style={styles.section}>
-          <div style={styles.sectionHeader}>
-            <div style={styles.sectionIcon}>📋</div>
-            <h2 style={styles.sectionTitle}>Status da Associação</h2>
-          </div>
-          <div style={styles.infoBox}>
-            <div style={styles.infoRow}>
-              <span style={styles.infoLabel}>Status:</span>
-              <span
-                style={{
-                  ...styles.statusBadge,
-                  ...(user?.status === 'ATIVO' ? styles.statusActive : {}),
-                  ...(user?.status === 'INADIMPLENTE' ? styles.statusWarning : {}),
-                  ...(user?.status === 'INATIVO' ? styles.statusInactive : {}),
-                }}
-              >
-                {user?.status || 'N/A'}
-              </span>
-            </div>
-            <div style={styles.infoRow}>
-              <span style={styles.infoLabel}>Perfil:</span>
-              <span style={styles.infoValue}>
-                {user?.role === 'ADMIN' && 'Administrador'}
-                {user?.role === 'FINANCEIRO' && 'Financeiro'}
-                {user?.role === 'SINDICALIZADO' && 'Sindicalizado'}
-              </span>
-            </div>
-            {user?.dataVencimento && (
-              <div style={styles.infoRow}>
-                <span style={styles.infoLabel}>Vencimento:</span>
-                <span style={styles.infoValue}>
-                  {new Date(user.dataVencimento).toLocaleDateString('pt-BR')}
-                </span>
-              </div>
-            )}
-            {user?.createdAt && (
-              <div style={styles.infoRow}>
-                <span style={styles.infoLabel}>Membro desde:</span>
-                <span style={styles.infoValue}>
-                  {new Date(user.createdAt).toLocaleDateString('pt-BR')}
-                </span>
-              </div>
-            )}
           </div>
         </div>
       </div>
