@@ -11,6 +11,10 @@ const profileSchema = z.object({
   nomeCompleto: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
   email: z.string().email('Email inválido'),
   numeroOAB: z.string().optional(),
+  telefone: z.string().optional(),
+  enderecoResidencial: z.string().optional(),
+  enderecoProfissional: z.string().optional(),
+  instagram: z.string().optional(),
 });
 
 const passwordSchema = z.object({
@@ -60,6 +64,10 @@ const Profile = () => {
         nomeCompleto: user.nomeCompleto || '',
         email: user.email || '',
         numeroOAB: user.numeroOAB || '',
+        telefone: user.telefone || '',
+        enderecoResidencial: user.enderecoResidencial || '',
+        enderecoProfissional: user.enderecoProfissional || '',
+        instagram: user.instagram || '',
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -261,6 +269,50 @@ const Profile = () => {
                 style={styles.input}
                 disabled={loadingProfile}
                 placeholder="Ex: OAB123456"
+              />
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Telefone</label>
+              <input
+                type="text"
+                {...registerProfile('telefone')}
+                style={styles.input}
+                disabled={loadingProfile}
+                placeholder="(DDD) 99999-9999"
+              />
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Instagram</label>
+              <input
+                type="text"
+                {...registerProfile('instagram')}
+                style={styles.input}
+                disabled={loadingProfile}
+                placeholder="@seuusuario"
+              />
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Endereço Residencial</label>
+              <input
+                type="text"
+                {...registerProfile('enderecoResidencial')}
+                style={styles.input}
+                disabled={loadingProfile}
+                placeholder="Rua, número, bairro, cidade/UF"
+              />
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Endereço Profissional</label>
+              <input
+                type="text"
+                {...registerProfile('enderecoProfissional')}
+                style={styles.input}
+                disabled={loadingProfile}
+                placeholder="Rua, número, bairro, cidade/UF"
               />
             </div>
 
