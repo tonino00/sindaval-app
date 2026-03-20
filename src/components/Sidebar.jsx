@@ -41,7 +41,7 @@ const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
       <div style={styles.userSection}>
         {user?.fotoUrl ? (
           <img 
-            src={API_URL + user.fotoUrl} 
+            src={user.fotoUrl} 
             alt={user.nomeCompleto}
             style={styles.userAvatarImage}
           />

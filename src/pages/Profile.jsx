@@ -195,7 +195,7 @@ const Profile = () => {
               {photoPreview ? (
                 <img src={photoPreview} alt="Preview" style={styles.photoImage} />
               ) : user?.fotoUrl ? (
-                <img src={API_URL + user.fotoUrl} alt={user.nomeCompleto} style={styles.photoImage} />
+                <img src={user.fotoUrl} alt={user.nomeCompleto} style={styles.photoImage} />
               ) : (
                 <div style={styles.photoPlaceholder}>
                   {user?.nomeCompleto?.charAt(0).toUpperCase()}

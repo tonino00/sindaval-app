@@ -27,6 +27,7 @@ import PaymentFailure from './pages/PaymentFailure';
 import PaymentPending from './pages/PaymentPending';
 import TwoFactorLogin from './components/TwoFactorLogin';
 import TwoFactorSetup from './components/TwoFactorSetup';
+import PublicValidateCard from './pages/PublicValidateCard';
 
 function App() {
   const dispatch = useDispatch();
@@ -55,6 +56,7 @@ function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/verify-2fa" element={<TwoFactorLogin />} />
+      <Route path="/public/validar/:token" element={<PublicValidateCard />} />
       <Route path="/register" element={<Register />} />
 
       <Route path="/payment/success" element={<PaymentSuccess />} />
