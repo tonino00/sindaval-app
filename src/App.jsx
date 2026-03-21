@@ -42,7 +42,8 @@ function App() {
     // Não verificar se estiver nas páginas públicas
     const isPublicRoute = window.location.pathname === '/login' || 
                           window.location.pathname === '/register' ||
-                          window.location.pathname === '/verify-2fa';
+                          window.location.pathname === '/verify-2fa' ||
+                          window.location.pathname.startsWith('/public/validar/');
     
     if (!isPublicRoute) {
       const checkAuth = async () => {
