@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { getProfile } from './features/auth/authSlice';
 import store from './app/store';
 
@@ -34,16 +35,22 @@ import PublicValidateCard from './pages/PublicValidateCard';
 function App() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { pendingTwoFactor } = useSelector((state) => state.auth);
 
   useEffect(() => {
     // Verificar autenticação no carregamento da app
     // Não verificar se estiver nas páginas públicas
     const isPublicRoute = window.location.pathname === '/login' || 
-                          window.location.pathname === '/register';
+                          window.location.pathname === '/register' ||
+                          window.location.pathname === '/verify-2fa';
     
     if (!isPublicRoute) {
       const checkAuth = async () => {
         try {
+          if (pendingTwoFactor) {
+            return;
+          }
+
           const accessToken = store.getState()?.auth?.accessToken;
           if (accessToken) {
             await dispatch(getProfile()).unwrap();
