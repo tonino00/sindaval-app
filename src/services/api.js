@@ -1,5 +1,5 @@
 import axios from 'axios';
-import store from '../store';
+import store from '../app/store';
 
 // URL base da API - usado para imagens e requisições
 export const API_URL =
