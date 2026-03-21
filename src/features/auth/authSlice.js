@@ -4,6 +4,7 @@ import api from '../../services/api';
 
 const initialState = {
   user: null,
+  accessToken: null,
   isAuthenticated: false,
   loading: false,
   error: null,
@@ -42,7 +43,11 @@ export const login = createAsyncThunk(
         return { requiresTwoFactor: true, email, password };
       }
 
-      return { requiresTwoFactor: false, user: decodeUser(response.data.user) };
+      return {
+        requiresTwoFactor: false,
+        user: decodeUser(response.data.user),
+        accessToken: response.data?.accessToken || null,
+      };
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || 'Erro ao fazer login'
@@ -61,7 +66,10 @@ export const login2fa = createAsyncThunk(
         ...(twoFactorToken ? { twoFactorToken } : {}),
         ...(recoveryCode ? { recoveryCode } : {}),
       });
-      return decodeUser(response.data.user);
+      return {
+        user: decodeUser(response.data.user),
+        accessToken: response.data?.accessToken || null,
+      };
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || 'Erro ao validar 2FA'
@@ -75,7 +83,10 @@ export const refreshToken = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await api.post('/auth/refresh');
-      return decodeUser(response.data.user);
+      return {
+        user: decodeUser(response.data.user),
+        accessToken: response.data?.accessToken || null,
+      };
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || 'Sessão expirada'
@@ -119,6 +130,9 @@ const authSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+    setAccessToken: (state, action) => {
+      state.accessToken = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -132,6 +146,7 @@ const authSlice = createSlice({
         if (action.payload?.requiresTwoFactor) {
           state.isAuthenticated = false;
           state.user = null;
+          state.accessToken = null;
           state.pendingTwoFactor = {
             email: action.payload.email,
             password: action.payload.password,
@@ -143,6 +158,7 @@ const authSlice = createSlice({
 
         state.isAuthenticated = true;
         state.user = action.payload.user;
+        state.accessToken = action.payload.accessToken;
         state.pendingTwoFactor = null;
         state.error = null;
         state.initialized = true;
@@ -151,6 +167,7 @@ const authSlice = createSlice({
         state.loading = false;
         state.isAuthenticated = false;
         state.user = null;
+        state.accessToken = null;
         state.error = action.payload;
         state.initialized = true;
         state.pendingTwoFactor = null;
@@ -162,7 +179,8 @@ const authSlice = createSlice({
       .addCase(login2fa.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        state.user = action.payload;
+        state.user = action.payload.user;
+        state.accessToken = action.payload.accessToken;
         state.pendingTwoFactor = null;
         state.error = null;
         state.initialized = true;
@@ -171,6 +189,7 @@ const authSlice = createSlice({
         state.loading = false;
         state.isAuthenticated = false;
         state.user = null;
+        state.accessToken = null;
         state.error = action.payload;
         state.pendingTwoFactor = state.pendingTwoFactor;
         state.initialized = true;
@@ -181,7 +200,8 @@ const authSlice = createSlice({
       .addCase(refreshToken.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        state.user = action.payload;
+        state.user = action.payload.user;
+        state.accessToken = action.payload.accessToken;
         state.error = null;
         state.initialized = true;
       })
@@ -189,6 +209,7 @@ const authSlice = createSlice({
         state.loading = false;
         state.isAuthenticated = false;
         state.user = null;
+        state.accessToken = null;
       })
       .addCase(logout.pending, (state) => {
         state.loading = true;
@@ -197,6 +218,7 @@ const authSlice = createSlice({
         state.loading = false;
         state.isAuthenticated = false;
         state.user = null;
+        state.accessToken = null;
         state.error = null;
         state.initialized = true;
       })
@@ -204,6 +226,7 @@ const authSlice = createSlice({
         state.loading = false;
         state.isAuthenticated = false;
         state.user = null;
+        state.accessToken = null;
         state.error = null;
         state.initialized = true;
       })
@@ -221,10 +244,11 @@ const authSlice = createSlice({
         state.loading = false;
         state.isAuthenticated = false;
         state.user = null;
+        state.accessToken = null;
         state.initialized = true;
       });
   },
 });
 
-export const { clearError } = authSlice.actions;
+export const { clearError, setAccessToken } = authSlice.actions;
 export default authSlice.reducer;
