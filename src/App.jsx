@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { getProfile } from './features/auth/authSlice';
+import { getProfile, refreshToken } from './features/auth/authSlice';
 
 import ProtectedRoute from './routes/ProtectedRoute';
 import RoleGuard from './routes/RoleGuard';
@@ -41,6 +41,7 @@ function App() {
     if (!isPublicRoute) {
       const checkAuth = async () => {
         try {
+          await dispatch(refreshToken()).unwrap();
           await dispatch(getProfile()).unwrap();
         } catch (error) {
           // Usuário não autenticado - silencioso
