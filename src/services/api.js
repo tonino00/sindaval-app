@@ -25,7 +25,7 @@ const api = axios.create({
   withCredentials: true, // Envia cookies automaticamente
 });
 
-export const initApiInterceptors = ({ getAccessToken, setAccessToken }) => {
+export const initApiInterceptors = ({ getAccessToken, setAccessToken, getRefreshToken, setRefreshToken }) => {
   api.interceptors.request.use(
     (config) => {
       const accessToken = getAccessToken?.();
@@ -80,10 +80,18 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const refreshResponse = await api.post('/auth/refresh');
+        const currentRefreshToken = getRefreshToken?.() || null;
+        const refreshResponse = await api.post(
+          '/auth/refresh',
+          currentRefreshToken ? { refreshToken: currentRefreshToken } : undefined
+        );
         const newAccessToken = refreshResponse.data?.accessToken || null;
+        const newRefreshToken = refreshResponse.data?.refreshToken || null;
         if (newAccessToken) {
           setAccessToken?.(newAccessToken);
+        }
+        if (newRefreshToken) {
+          setRefreshToken?.(newRefreshToken);
         }
         processQueue(null);
         isRefreshing = false;
