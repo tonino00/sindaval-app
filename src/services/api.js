@@ -1,5 +1,4 @@
 import axios from 'axios';
-import store from '../app/store';
 
 // URL base da API - usado para imagens e requisições
 export const API_URL =
@@ -26,20 +25,20 @@ const api = axios.create({
   withCredentials: true, // Envia cookies automaticamente
 });
 
-api.interceptors.request.use(
-  (config) => {
-    const state = store.getState?.();
-    const accessToken = state?.auth?.accessToken;
+export const initApiInterceptors = ({ getAccessToken, setAccessToken }) => {
+  api.interceptors.request.use(
+    (config) => {
+      const accessToken = getAccessToken?.();
 
-    if (accessToken) {
-      config.headers = config.headers || {};
-      config.headers.Authorization = `Bearer ${accessToken}`;
-    }
+      if (accessToken) {
+        config.headers = config.headers || {};
+        config.headers.Authorization = `Bearer ${accessToken}`;
+      }
 
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
 
 // Flag para controlar se já estamos tentando fazer refresh
 let isRefreshing = false;
@@ -84,7 +83,7 @@ api.interceptors.response.use(
         const refreshResponse = await api.post('/auth/refresh');
         const newAccessToken = refreshResponse.data?.accessToken || null;
         if (newAccessToken) {
-          store.dispatch({ type: 'auth/setAccessToken', payload: newAccessToken });
+          setAccessToken?.(newAccessToken);
         }
         processQueue(null);
         isRefreshing = false;
@@ -103,5 +102,8 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+  return api;
+};
 
 export default api;
