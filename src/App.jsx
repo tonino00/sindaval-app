@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { getProfile, refreshToken } from './features/auth/authSlice';
 
 import ProtectedRoute from './routes/ProtectedRoute';
@@ -31,6 +32,7 @@ import PublicValidateCard from './pages/PublicValidateCard';
 
 function App() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Verificar autenticação no carregamento da app
@@ -46,12 +48,13 @@ function App() {
         } catch (error) {
           // Usuário não autenticado - silencioso
           console.log('Usuário não autenticado');
+          navigate('/login', { replace: true });
         }
       };
 
       checkAuth();
     }
-  }, [dispatch]);
+  }, [dispatch, navigate]);
 
   return (
     <Routes>
