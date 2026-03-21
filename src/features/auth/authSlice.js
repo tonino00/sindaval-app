@@ -5,6 +5,7 @@ import api from '../../services/api';
 const initialState = {
   user: null,
   accessToken: null,
+  refreshToken: null,
   isAuthenticated: false,
   loading: false,
   error: null,
@@ -47,6 +48,7 @@ export const login = createAsyncThunk(
         requiresTwoFactor: false,
         user: decodeUser(response.data.user),
         accessToken: response.data?.accessToken || null,
+        refreshToken: response.data?.refreshToken || null,
       };
     } catch (error) {
       return rejectWithValue(
@@ -69,6 +71,7 @@ export const login2fa = createAsyncThunk(
       return {
         user: decodeUser(response.data.user),
         accessToken: response.data?.accessToken || null,
+        refreshToken: response.data?.refreshToken || null,
       };
     } catch (error) {
       return rejectWithValue(
@@ -80,12 +83,17 @@ export const login2fa = createAsyncThunk(
 
 export const refreshToken = createAsyncThunk(
   'auth/refresh',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, getState }) => {
     try {
-      const response = await api.post('/auth/refresh');
+      const state = getState?.();
+      const currentRefreshToken = state?.auth?.refreshToken || null;
+      const response = await api.post('/auth/refresh',
+        currentRefreshToken ? { refreshToken: currentRefreshToken } : undefined
+      );
       return {
         user: decodeUser(response.data.user),
         accessToken: response.data?.accessToken || null,
+        refreshToken: response.data?.refreshToken || null,
       };
     } catch (error) {
       return rejectWithValue(
@@ -147,6 +155,7 @@ const authSlice = createSlice({
           state.isAuthenticated = false;
           state.user = null;
           state.accessToken = null;
+          state.refreshToken = null;
           state.pendingTwoFactor = {
             email: action.payload.email,
             password: action.payload.password,
@@ -159,6 +168,7 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.user = action.payload.user;
         state.accessToken = action.payload.accessToken;
+        state.refreshToken = action.payload.refreshToken;
         state.pendingTwoFactor = null;
         state.error = null;
         state.initialized = true;
@@ -168,6 +178,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
         state.accessToken = null;
+        state.refreshToken = null;
         state.error = action.payload;
         state.initialized = true;
         state.pendingTwoFactor = null;
@@ -181,6 +192,7 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.user = action.payload.user;
         state.accessToken = action.payload.accessToken;
+        state.refreshToken = action.payload.refreshToken;
         state.pendingTwoFactor = null;
         state.error = null;
         state.initialized = true;
@@ -190,6 +202,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
         state.accessToken = null;
+        state.refreshToken = null;
         state.error = action.payload;
         state.pendingTwoFactor = state.pendingTwoFactor;
         state.initialized = true;
@@ -202,6 +215,7 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.user = action.payload.user;
         state.accessToken = action.payload.accessToken;
+        state.refreshToken = action.payload.refreshToken || state.refreshToken;
         state.error = null;
         state.initialized = true;
       })
@@ -210,6 +224,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
         state.accessToken = null;
+        state.refreshToken = null;
       })
       .addCase(logout.pending, (state) => {
         state.loading = true;
@@ -219,6 +234,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
         state.accessToken = null;
+        state.refreshToken = null;
         state.error = null;
         state.initialized = true;
       })
@@ -227,6 +243,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
         state.accessToken = null;
+        state.refreshToken = null;
         state.error = null;
         state.initialized = true;
       })
@@ -245,6 +262,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
         state.accessToken = null;
+        state.refreshToken = null;
         state.initialized = true;
       });
   },
