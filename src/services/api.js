@@ -99,10 +99,6 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         isRefreshing = false;
-        // Limpar autenticação e redirecionar para login apenas se não estiver já lá
-        if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
-          window.location.href = '/login';
-        }
         return Promise.reject(refreshError);
       }
     }

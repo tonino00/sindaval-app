@@ -2,7 +2,8 @@ import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { getProfile, refreshToken } from './features/auth/authSlice';
+import { getProfile } from './features/auth/authSlice';
+import store from './app/store';
 
 import ProtectedRoute from './routes/ProtectedRoute';
 import RoleGuard from './routes/RoleGuard';
@@ -43,8 +44,14 @@ function App() {
     if (!isPublicRoute) {
       const checkAuth = async () => {
         try {
-          await dispatch(refreshToken()).unwrap();
-          await dispatch(getProfile()).unwrap();
+          const accessToken = store.getState()?.auth?.accessToken;
+          if (accessToken) {
+            await dispatch(getProfile()).unwrap();
+            return;
+          }
+
+          console.log('Usuário não autenticado');
+          navigate('/login', { replace: true });
         } catch (error) {
           // Usuário não autenticado - silencioso
           console.log('Usuário não autenticado');
