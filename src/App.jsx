@@ -38,8 +38,7 @@ function App() {
   const { pendingTwoFactor } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    // Verificar autenticação no carregamento da app
-    // Não verificar se estiver nas páginas públicas
+    // Verificar autenticação no carregamento da app via cookies
     const isPublicRoute = window.location.pathname === '/login' || 
                           window.location.pathname === '/register' ||
                           window.location.pathname === '/verify-2fa' ||
@@ -49,27 +48,27 @@ function App() {
       const checkAuth = async () => {
         try {
           if (pendingTwoFactor) {
+            console.log('⏳ Aguardando 2FA...');
             return;
           }
 
-          const accessToken = store.getState()?.auth?.accessToken;
-          if (accessToken) {
-            await dispatch(getProfile()).unwrap();
-            return;
-          }
-
-          console.log('Usuário não autenticado');
-          navigate('/login', { replace: true });
+          console.log('🔄 Verificando autenticação no carregamento...');
+          console.log('🍪 Cookies disponíveis:', document.cookie);
+          
+          // Sempre tenta verificar via /auth/me (que usa cookies)
+          // Não depende mais de accessToken no Redux
+          await dispatch(getProfile()).unwrap();
+          console.log('✅ Autenticação verificada com sucesso');
         } catch (error) {
-          // Usuário não autenticado - silencioso
-          console.log('Usuário não autenticado');
+          // Usuário não autenticado - redirecionar para login
+          console.log('⚠️ Não autenticado - redirecionando para login');
           navigate('/login', { replace: true });
         }
       };
 
       checkAuth();
     }
-  }, [dispatch, navigate]);
+  }, [dispatch, navigate, pendingTwoFactor]);
 
   return (
     <Routes>
