@@ -21,13 +21,27 @@ const api = axios.create({
   baseURL: apiBaseURL,
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json'
   },
-  withCredentials: true, // Envia cookies automaticamente
+  withCredentials: true, // ESSENCIAL - permite envio de cookies
+  timeout: 30000 // 30 segundos de timeout
+});
+
+// Log de configuração inicial
+console.log('🔧 API configurada:', {
+  baseURL: apiBaseURL,
+  withCredentials: true,
+  isMobile: /Mobile|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
 });
 
 export const initApiInterceptors = ({ getAccessToken, setAccessToken, getRefreshToken, setRefreshToken }) => {
   api.interceptors.request.use(
     (config) => {
+      console.log(`📤 [${config.method?.toUpperCase()}] ${config.url}`, {
+        withCredentials: config.withCredentials,
+        baseURL: config.baseURL
+      });
+
       const accessToken = getAccessToken?.();
 
       if (accessToken) {
@@ -37,7 +51,10 @@ export const initApiInterceptors = ({ getAccessToken, setAccessToken, getRefresh
 
       return config;
     },
-    (error) => Promise.reject(error)
+    (error) => {
+      console.error('❌ Erro na requisição:', error);
+      return Promise.reject(error);
+    }
   );
 
 // Flag para controlar se já estamos tentando fazer refresh
@@ -57,9 +74,17 @@ const processQueue = (error, token = null) => {
 };
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log(`📥 [${response.status}] ${response.config.url}`);
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
+
+    console.error(`❌ [${error.response?.status || 'NETWORK'}] ${originalRequest?.url}`, {
+      message: error.response?.data?.message || error.message,
+      cookies: document.cookie
+    });
 
     // Não tentar refresh em rotas de autenticação
     const isAuthRoute = originalRequest.url?.includes('/auth/');
