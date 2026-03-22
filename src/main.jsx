@@ -9,6 +9,15 @@ import { initApiInterceptors } from './services/api'
 import { setAccessToken, setRefreshToken } from './features/auth/authSlice'
 import './styles/responsive.css'
 
+// Logs de debug para ambiente e dispositivo
+const isMobile = /Mobile|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+console.log('🚀 Aplicação iniciando...');
+console.log('📱 Dispositivo:', isMobile ? 'Mobile' : 'Desktop');
+console.log('🌐 User Agent:', navigator.userAgent);
+console.log('🔗 API URL:', import.meta.env.VITE_API_URL);
+console.log('🔀 Usar Proxy Vercel:', import.meta.env.VITE_USE_VERCEL_PROXY);
+console.log('🍪 Cookies iniciais:', document.cookie || 'Nenhum cookie');
+
 initApiInterceptors({
   getAccessToken: () => store.getState()?.auth?.accessToken,
   setAccessToken: (token) => store.dispatch(setAccessToken(token)),

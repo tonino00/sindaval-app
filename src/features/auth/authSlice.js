@@ -4,14 +4,17 @@ import api from '../../services/api';
 
 const initialState = {
   user: null,
-  accessToken: null,
-  refreshToken: null,
+  accessToken: null, // Mantido para compatibilidade com refresh token
+  refreshToken: null, // Mantido para compatibilidade com refresh token
   isAuthenticated: false,
   loading: false,
   error: null,
-  initialized: false, // Flag para controlar se verificação inicial foi feita
+  initialized: false,
   pendingTwoFactor: null,
 };
+
+// Log de inicialização
+console.log('🔐 AuthSlice inicializado - usando cookies para autenticação');
 
 const decodeUser = (user) => {
   if (!user) return null;
@@ -38,12 +41,17 @@ export const login = createAsyncThunk(
   'auth/login',
   async ({ email, password }, { rejectWithValue }) => {
     try {
+      console.log('🔑 Tentando fazer login...');
       const response = await api.post('/auth/login', { email, password });
 
       if (response.data?.requiresTwoFactor) {
+        console.log('🔐 2FA necessário');
         return { requiresTwoFactor: true, email, password };
       }
 
+      console.log('✅ Login bem-sucedido');
+      console.log('🍪 Cookies após login:', document.cookie);
+      
       return {
         requiresTwoFactor: false,
         user: decodeUser(response.data.user),
@@ -51,6 +59,7 @@ export const login = createAsyncThunk(
         refreshToken: response.data?.refreshToken || null,
       };
     } catch (error) {
+      console.error('❌ Erro no login:', error.response?.data?.message || error.message);
       return rejectWithValue(
         error.response?.data?.message || 'Erro ao fazer login'
       );
@@ -121,9 +130,13 @@ export const getProfile = createAsyncThunk(
   'auth/getProfile',
   async (_, { rejectWithValue }) => {
     try {
+      console.log('🔍 Verificando autenticação via /auth/me...');
+      console.log('📋 Cookies atuais:', document.cookie);
       const response = await api.get('/auth/me');
+      console.log('✅ Usuário autenticado:', response.data?.user?.email);
       return decodeUser(response.data?.user);
     } catch (error) {
+      console.error('❌ Erro ao verificar autenticação:', error.response?.data?.message || error.message);
       return rejectWithValue(
         error.response?.data?.message || 'Erro ao buscar perfil'
       );
@@ -260,7 +273,8 @@ const authSlice = createSlice({
         state.initialized = true;
         state.pendingTwoFactor = null;
       })
-      .addCase(getProfile.rejected, (state) => {
+      .addCase(getProfile.rejected, (state, action) => {
+        console.log('⚠️ getProfile rejeitado - usuário não autenticado');
         state.loading = false;
         state.isAuthenticated = false;
         state.user = null;
