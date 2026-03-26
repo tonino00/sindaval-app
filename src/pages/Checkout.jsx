@@ -10,7 +10,7 @@ const Checkout = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState("CARTAO");
-  const [amount] = useState(0.01);
+  const [amount] = useState(100.0);
   const lastTriggeredMethodRef = useRef(null);
 
   const buildCheckoutPayload = (metodo) => ({
