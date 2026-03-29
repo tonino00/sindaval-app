@@ -31,6 +31,9 @@ import PaymentPending from './pages/PaymentPending';
 import TwoFactorLogin from './components/TwoFactorLogin';
 import TwoFactorSetup from './components/TwoFactorSetup';
 import PublicValidateCard from './pages/PublicValidateCard';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import CheckEmail from './pages/CheckEmail';
 
 function App() {
   const dispatch = useDispatch();
@@ -42,6 +45,9 @@ function App() {
     const isPublicRoute = window.location.pathname === '/login' || 
                           window.location.pathname === '/register' ||
                           window.location.pathname === '/verify-2fa' ||
+                          window.location.pathname === '/forgot-password' ||
+                          window.location.pathname === '/reset-password' ||
+                          window.location.pathname === '/check-email' ||
                           window.location.pathname.startsWith('/public/validar/');
     
     if (!isPublicRoute) {
@@ -74,6 +80,9 @@ function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/verify-2fa" element={<TwoFactorLogin />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/check-email" element={<CheckEmail />} />
       <Route path="/public/validar/:token" element={<PublicValidateCard />} />
       <Route path="/register" element={<Register />} />
 
