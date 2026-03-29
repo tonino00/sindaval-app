@@ -1,17 +1,30 @@
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
+import InputMask from 'react-input-mask';
 import api, { API_URL } from '../services/api';
 import { getProfile } from '../features/auth/authSlice';
 
+const validatePhone = (value) => {
+  if (!value) return true;
+  const clean = String(value || '').replace(/\D/g, '');
+  return clean.length === 10 || clean.length === 11;
+};
+
 const profileSchema = z.object({
-  nomeCompleto: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
-  email: z.string().email('Email inválido'),
+  nomeCompleto: z.string()
+    .min(3, 'Nome deve ter no mínimo 3 caracteres')
+    .regex(/^[A-Za-zÀ-ÿ\s]+$/, 'Nome deve conter apenas letras')
+    .refine((val) => val.trim().split(/\s+/).length >= 2, 'Digite o nome completo (nome e sobrenome)'),
+  email: z.string()
+    .min(1, 'Email é obrigatório')
+    .email('Email inválido')
+    .toLowerCase(),
   numeroOAB: z.string().optional(),
-  telefone: z.string().optional(),
+  telefone: z.string().optional().refine(validatePhone, 'Telefone inválido'),
   enderecoResidencial: z.string().optional(),
   enderecoProfissional: z.string().optional(),
   instagram: z.string().optional(),
@@ -46,6 +59,7 @@ const Profile = () => {
   const {
     register: registerProfile,
     handleSubmit: handleSubmitProfile,
+    control: controlProfile,
     reset: resetProfile,
     formState: { errors: errorsProfile },
   } = useForm({
@@ -401,13 +415,33 @@ const Profile = () => {
 
               <div style={styles.formGroup}>
                 <label style={styles.label}>Telefone</label>
-                <input
-                  type="text"
-                  {...registerProfile('telefone')}
-                  style={styles.input}
-                  disabled={loadingProfile}
-                  placeholder="(DDD) 99999-9999"
+                <Controller
+                  name="telefone"
+                  control={controlProfile}
+                  render={({ field }) => (
+                    <InputMask
+                      mask="(99) 99999-9999"
+                      value={field.value}
+                      onChange={field.onChange}
+                      disabled={loadingProfile}
+                    >
+                      {(inputProps) => (
+                        <input
+                          {...inputProps}
+                          type="text"
+                          style={{
+                            ...styles.input,
+                            ...(errorsProfile.telefone ? { borderColor: '#dc2626' } : {}),
+                          }}
+                          placeholder="(82) 99999-9999"
+                        />
+                      )}
+                    </InputMask>
+                  )}
                 />
+                {errorsProfile.telefone && (
+                  <span style={styles.errorText}>{errorsProfile.telefone.message}</span>
+                )}
               </div>
 
               <div style={styles.formGroup}>

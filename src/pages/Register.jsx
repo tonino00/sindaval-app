@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate, Link } from 'react-router-dom';
+import InputMask from 'react-input-mask';
 import api from '../services/api';
 
 const validateCPF = (cpf) => {
@@ -24,8 +25,18 @@ const validateCPF = (cpf) => {
 const validateOAB = (value) => {
   const v = String(value || '').trim().toUpperCase();
   if (!v) return false;
-  // Aceita padrões comuns: "OAB/UF 123456", "UF123456", "OAB123456"
-  return /^(OAB\/?\s*)?([A-Z]{2})?\s*\d{4,10}$/.test(v);
+  
+  const ufsValidas = [
+    'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA',
+    'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN',
+    'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+  ];
+  
+  const match = v.match(/^([A-Z]{2})\s*(\d{4,10})$/);
+  if (!match) return false;
+  
+  const [, uf, numero] = match;
+  return ufsValidas.includes(uf) && numero.length >= 4;
 };
 
 const validatePhone = (value) => {
@@ -35,8 +46,14 @@ const validatePhone = (value) => {
 };
 
 const registerSchema = z.object({
-  nomeCompleto: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
-  email: z.string().email('Email inválido'),
+  nomeCompleto: z.string()
+    .min(3, 'Nome deve ter no mínimo 3 caracteres')
+    .regex(/^[A-Za-zÀ-ÿ\s]+$/, 'Nome deve conter apenas letras')
+    .refine((val) => val.trim().split(/\s+/).length >= 2, 'Digite o nome completo (nome e sobrenome)'),
+  email: z.string()
+    .min(1, 'Email é obrigatório')
+    .email('Email inválido')
+    .toLowerCase(),
   cpf: z.string().min(11, 'CPF inválido').refine(validateCPF, 'CPF inválido'),
   numeroOAB: z.string().min(1, 'Número da OAB é obrigatório').refine(validateOAB, 'Formato da OAB inválido'),
   telefone: z.string().min(1, 'Telefone é obrigatório').refine(validatePhone, 'Telefone inválido'),
@@ -61,6 +78,7 @@ const Register = () => {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(registerSchema),
@@ -154,7 +172,7 @@ const Register = () => {
     <div style={styles.container}>
       <div style={styles.card}>
         <h1 style={styles.title}>Criar Conta</h1>
-        <p style={styles.subtitle}>Sindaval - Sistema Jurídico</p>
+        <p style={styles.subtitle}>Sindaval - Área de Cadastro</p>
 
         <form onSubmit={handleSubmit(onSubmit)} style={styles.form}>
           <div style={styles.formGroup}>
@@ -227,15 +245,29 @@ const Register = () => {
 
           <div style={styles.formGroup}>
             <label style={styles.label}>CPF</label>
-            <input
-              type="text"
-              {...register('cpf')}
-              style={{
-                ...styles.input,
-                ...(errors.cpf ? styles.inputError : {}),
-              }}
-              placeholder="000.000.000-00"
-              disabled={loading}
+            <Controller
+              name="cpf"
+              control={control}
+              render={({ field }) => (
+                <InputMask
+                  mask="999.999.999-99"
+                  value={field.value}
+                  onChange={field.onChange}
+                  disabled={loading}
+                >
+                  {(inputProps) => (
+                    <input
+                      {...inputProps}
+                      type="text"
+                      style={{
+                        ...styles.input,
+                        ...(errors.cpf ? styles.inputError : {}),
+                      }}
+                      placeholder="000.000.000-00"
+                    />
+                  )}
+                </InputMask>
+              )}
             />
             {errors.cpf && (
               <span style={styles.errorText}>{errors.cpf.message}</span>
@@ -244,15 +276,36 @@ const Register = () => {
 
           <div style={styles.formGroup}>
             <label style={styles.label}>Número da OAB</label>
-            <input
-              type="text"
-              {...register('numeroOAB')}
-              style={{
-                ...styles.input,
-                ...(errors.numeroOAB ? styles.inputError : {}),
-              }}
-              placeholder="Ex: OAB/AL 123456"
-              disabled={loading}
+            <Controller
+              name="numeroOAB"
+              control={control}
+              render={({ field }) => (
+                <InputMask
+                  mask="aa 999999"
+                  value={field.value}
+                  onChange={(e) => {
+                    const value = e.target.value.toUpperCase();
+                    field.onChange(value);
+                  }}
+                  disabled={loading}
+                  formatChars={{
+                    '9': '[0-9]',
+                    'a': '[A-Za-z]'
+                  }}
+                >
+                  {(inputProps) => (
+                    <input
+                      {...inputProps}
+                      type="text"
+                      style={{
+                        ...styles.input,
+                        ...(errors.numeroOAB ? styles.inputError : {}),
+                      }}
+                      placeholder="Ex: AL 123456"
+                    />
+                  )}
+                </InputMask>
+              )}
             />
             {errors.numeroOAB && (
               <span style={styles.errorText}>{errors.numeroOAB.message}</span>
@@ -261,15 +314,29 @@ const Register = () => {
 
           <div style={styles.formGroup}>
             <label style={styles.label}>Telefone</label>
-            <input
-              type="text"
-              {...register('telefone')}
-              style={{
-                ...styles.input,
-                ...(errors.telefone ? styles.inputError : {}),
-              }}
-              placeholder="(82) 99999-9999"
-              disabled={loading}
+            <Controller
+              name="telefone"
+              control={control}
+              render={({ field }) => (
+                <InputMask
+                  mask="(99) 99999-9999"
+                  value={field.value}
+                  onChange={field.onChange}
+                  disabled={loading}
+                >
+                  {(inputProps) => (
+                    <input
+                      {...inputProps}
+                      type="text"
+                      style={{
+                        ...styles.input,
+                        ...(errors.telefone ? styles.inputError : {}),
+                      }}
+                      placeholder="(82) 99999-9999"
+                    />
+                  )}
+                </InputMask>
+              )}
             />
             {errors.telefone && (
               <span style={styles.errorText}>{errors.telefone.message}</span>
