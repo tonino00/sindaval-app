@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import api from '../services/api';
 import { getProfile } from '../features/auth/authSlice';
 import { QRCodeCanvas } from 'qrcode.react';
+import InputModal from './InputModal';
 
 const TwoFactorSetup = () => {
   const dispatch = useDispatch();
@@ -20,6 +21,7 @@ const TwoFactorSetup = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [showDisableModal, setShowDisableModal] = useState(false);
 
   const isTwoFactorEnabled = Boolean(user?.isTwoFactorEnabled);
 
@@ -88,10 +90,8 @@ const TwoFactorSetup = () => {
     URL.revokeObjectURL(url);
   };
 
-  const handleDisable = async () => {
-    const code = window.prompt('Digite o código do autenticador para desativar o 2FA:');
-    if (!code) return;
-
+  const handleDisable = async (code) => {
+    setShowDisableModal(false);
     setLoading(true);
     setError(null);
     setSuccess(null);
@@ -123,7 +123,7 @@ const TwoFactorSetup = () => {
         {success && <div style={styles.successBox}>{success}</div>}
 
         <button
-          onClick={handleDisable}
+          onClick={() => setShowDisableModal(true)}
           disabled={loading}
           style={{
             ...styles.button,
@@ -133,6 +133,17 @@ const TwoFactorSetup = () => {
         >
           {loading ? 'Processando...' : '❌ Desativar 2FA'}
         </button>
+
+        <InputModal
+          isOpen={showDisableModal}
+          onClose={() => setShowDisableModal(false)}
+          onConfirm={handleDisable}
+          title="🔐 Desativar 2FA"
+          description="Digite o código de 6 dígitos do seu autenticador para confirmar a desativação do 2FA:"
+          placeholder="000000"
+          maxLength={6}
+          inputType="text"
+        />
       </div>
     );
   }

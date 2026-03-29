@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import api, { API_URL } from '../services/api';
+import ConfirmModal from '../components/ConfirmModal';
 
 const notificationSchema = z.object({
   titulo: z.string().min(3, 'Título deve ter no mínimo 3 caracteres'),
@@ -35,6 +36,7 @@ const Admin = () => {
   const [statusFilter, setStatusFilter] = useState('TODOS');
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
 
   const {
     register: registerNotification,
@@ -160,42 +162,57 @@ const Admin = () => {
     }
   };
 
-  const handleDeleteUser = async (id) => {
-    if (!window.confirm('Tem certeza que deseja excluir este usuário?')) return;
-
-    try {
-      await api.delete(`/users/${id}`);
-      setSuccess('Usuário excluído com sucesso!');
-      await fetchUsers();
-    } catch (err) {
-      setError('Erro ao excluir usuário');
-    }
+  const handleDeleteUser = (id) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Excluir Usuário',
+      message: 'Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.',
+      onConfirm: async () => {
+        try {
+          await api.delete(`/users/${id}`);
+          setSuccess('Usuário excluído com sucesso!');
+          await fetchUsers();
+        } catch (err) {
+          setError('Erro ao excluir usuário');
+        }
+      },
+    });
   };
 
-  const handleToggleStatus = async (userId, currentStatus) => {
+  const handleToggleStatus = (userId, currentStatus) => {
     const newStatus = currentStatus === 'ATIVO' ? 'INATIVO' : 'ATIVO';
     
-    if (!window.confirm(`Tem certeza que deseja alterar o status para ${newStatus}?`)) return;
-
-    try {
-      await api.patch(`/users/${userId}`, { status: newStatus });
-      setSuccess(`Status alterado para ${newStatus} com sucesso!`);
-      await fetchUsers();
-    } catch (err) {
-      setError('Erro ao alterar status');
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: 'Alterar Status',
+      message: `Tem certeza que deseja alterar o status para ${newStatus}?`,
+      onConfirm: async () => {
+        try {
+          await api.patch(`/users/${userId}`, { status: newStatus });
+          setSuccess(`Status alterado para ${newStatus} com sucesso!`);
+          await fetchUsers();
+        } catch (err) {
+          setError('Erro ao alterar status');
+        }
+      },
+    });
   };
 
-  const handleChangeRole = async (userId, newRole) => {
-    if (!window.confirm(`Tem certeza que deseja alterar o perfil para ${newRole}?`)) return;
-
-    try {
-      await api.patch(`/users/${userId}`, { role: newRole });
-      setSuccess(`Perfil alterado para ${newRole} com sucesso!`);
-      await fetchUsers();
-    } catch (err) {
-      setError('Erro ao alterar perfil');
-    }
+  const handleChangeRole = (userId, newRole) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Alterar Perfil',
+      message: `Tem certeza que deseja alterar o perfil para ${newRole}?`,
+      onConfirm: async () => {
+        try {
+          await api.patch(`/users/${userId}`, { role: newRole });
+          setSuccess(`Perfil alterado para ${newRole} com sucesso!`);
+          await fetchUsers();
+        } catch (err) {
+          setError('Erro ao alterar perfil');
+        }
+      },
+    });
   };
 
   const fetchNotifications = async () => {
@@ -210,30 +227,40 @@ const Admin = () => {
     }
   };
 
-  const handleBlockUser = async (userId, isBlocked) => {
+  const handleBlockUser = (userId, isBlocked) => {
     const action = isBlocked ? 'desbloquear' : 'bloquear';
     
-    if (!window.confirm(`Tem certeza que deseja ${action} este usuário?`)) return;
-
-    try {
-      await api.patch(`/users/${userId}`, { bloqueado: !isBlocked });
-      setSuccess(`Usuário ${action}ado com sucesso!`);
-      await fetchUsers();
-    } catch (err) {
-      setError(`Erro ao ${action} usuário`);
-    }
+    setConfirmModal({
+      isOpen: true,
+      title: isBlocked ? 'Desbloquear Usuário' : 'Bloquear Usuário',
+      message: `Tem certeza que deseja ${action} este usuário?`,
+      onConfirm: async () => {
+        try {
+          await api.patch(`/users/${userId}`, { bloqueado: !isBlocked });
+          setSuccess(`Usuário ${action}ado com sucesso!`);
+          await fetchUsers();
+        } catch (err) {
+          setError(`Erro ao ${action} usuário`);
+        }
+      },
+    });
   };
 
-  const handleDeleteNotification = async (notificationId) => {
-    if (!window.confirm('Tem certeza que deseja excluir esta notificação?')) return;
-
-    try {
-      await api.delete(`/notifications/${notificationId}`);
-      setSuccessNotification('Notificação excluída com sucesso!');
-      await fetchNotifications();
-    } catch (err) {
-      setErrorNotification('Erro ao excluir notificação');
-    }
+  const handleDeleteNotification = (notificationId) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Excluir Notificação',
+      message: 'Tem certeza que deseja excluir esta notificação?',
+      onConfirm: async () => {
+        try {
+          await api.delete(`/notifications/${notificationId}`);
+          setSuccessNotification('Notificação excluída com sucesso!');
+          await fetchNotifications();
+        } catch (err) {
+          setErrorNotification('Erro ao excluir notificação');
+        }
+      },
+    });
   };
 
   const filteredUsers = users.filter(user => {
@@ -694,6 +721,14 @@ const Admin = () => {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+      />
     </div>
   );
 };

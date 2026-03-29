@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import api from '../services/api';
 import { formatPhone } from '../utils/formatters';
+import ConfirmModal from '../components/ConfirmModal';
 
 const agreementSchema = z.object({
   titulo: z.string().min(3, 'Título deve ter no mínimo 3 caracteres'),
@@ -21,6 +22,7 @@ const ManageAgreements = () => {
   const [success, setSuccess] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [phoneValue, setPhoneValue] = useState('');
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
 
   const {
     register,
@@ -105,16 +107,21 @@ const ManageAgreements = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Tem certeza que deseja excluir este convênio?')) return;
-
-    try {
-      await api.delete(`/agreements/${id}`);
-      await fetchAgreements();
-      setSuccess('Convênio excluído com sucesso!');
-    } catch (err) {
-      setError('Erro ao excluir convênio');
-    }
+  const handleDelete = (id) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Excluir Convênio',
+      message: 'Tem certeza que deseja excluir este convênio? Esta ação não pode ser desfeita.',
+      onConfirm: async () => {
+        try {
+          await api.delete(`/agreements/${id}`);
+          await fetchAgreements();
+          setSuccess('Convênio excluído com sucesso!');
+        } catch (err) {
+          setError('Erro ao excluir convênio');
+        }
+      },
+    });
   };
 
   return (
@@ -339,6 +346,14 @@ const ManageAgreements = () => {
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+      />
     </div>
   );
 };
