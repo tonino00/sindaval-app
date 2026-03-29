@@ -1,17 +1,30 @@
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
+import InputMask from 'react-input-mask';
 import api, { API_URL } from '../services/api';
 import { getProfile } from '../features/auth/authSlice';
 
+const validatePhone = (value) => {
+  if (!value) return true;
+  const clean = String(value || '').replace(/\D/g, '');
+  return clean.length === 10 || clean.length === 11;
+};
+
 const profileSchema = z.object({
-  nomeCompleto: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
-  email: z.string().email('Email inválido'),
+  nomeCompleto: z.string()
+    .min(3, 'Nome deve ter no mínimo 3 caracteres')
+    .regex(/^[A-Za-zÀ-ÿ\s]+$/, 'Nome deve conter apenas letras')
+    .refine((val) => val.trim().split(/\s+/).length >= 2, 'Digite o nome completo (nome e sobrenome)'),
+  email: z.string()
+    .min(1, 'Email é obrigatório')
+    .email('Email inválido')
+    .toLowerCase(),
   numeroOAB: z.string().optional(),
-  telefone: z.string().optional(),
+  telefone: z.string().optional().refine(validatePhone, 'Telefone inválido'),
   enderecoResidencial: z.string().optional(),
   enderecoProfissional: z.string().optional(),
   instagram: z.string().optional(),
@@ -39,10 +52,14 @@ const Profile = () => {
   const [successPassword, setSuccessPassword] = useState(null);
   const [successPhoto, setSuccessPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const {
     register: registerProfile,
     handleSubmit: handleSubmitProfile,
+    control: controlProfile,
     reset: resetProfile,
     formState: { errors: errorsProfile },
   } = useForm({
@@ -232,18 +249,37 @@ const Profile = () => {
 
           <div style={styles.section}>
             <div style={styles.sectionHeader}>
-              <div style={styles.sectionIcon}>�</div>
+              <div style={styles.sectionIcon}>🔒</div>
               <h2 style={styles.sectionTitle}>Alterar Senha</h2>
             </div>
             <form onSubmit={handleSubmitPassword(onSubmitPassword)} style={styles.form}>
               <div style={styles.formGroup}>
                 <label style={styles.label}>Senha Atual</label>
-                <input
-                  type="password"
-                  {...registerPassword('currentPassword')}
-                  style={styles.input}
-                  disabled={loadingPassword}
-                />
+                <div style={styles.inputWrapper}>
+                  <input
+                    type={showCurrentPassword ? "text" : "password"}
+                    {...registerPassword('currentPassword')}
+                    style={styles.input}
+                    disabled={loadingPassword}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    style={styles.toggleButton}
+                    disabled={loadingPassword}
+                  >
+                    {showCurrentPassword ? (
+                      <svg style={styles.icon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      </svg>
+                    ) : (
+                      <svg style={styles.icon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
                 {errorsPassword.currentPassword && (
                   <span style={styles.errorText}>{errorsPassword.currentPassword.message}</span>
                 )}
@@ -251,12 +287,31 @@ const Profile = () => {
 
               <div style={styles.formGroup}>
                 <label style={styles.label}>Nova Senha</label>
-                <input
-                  type="password"
-                  {...registerPassword('newPassword')}
-                  style={styles.input}
-                  disabled={loadingPassword}
-                />
+                <div style={styles.inputWrapper}>
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    {...registerPassword('newPassword')}
+                    style={styles.input}
+                    disabled={loadingPassword}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    style={styles.toggleButton}
+                    disabled={loadingPassword}
+                  >
+                    {showNewPassword ? (
+                      <svg style={styles.icon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      </svg>
+                    ) : (
+                      <svg style={styles.icon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
                 {errorsPassword.newPassword && (
                   <span style={styles.errorText}>{errorsPassword.newPassword.message}</span>
                 )}
@@ -264,12 +319,31 @@ const Profile = () => {
 
               <div style={styles.formGroup}>
                 <label style={styles.label}>Confirmar Nova Senha</label>
-                <input
-                  type="password"
-                  {...registerPassword('confirmPassword')}
-                  style={styles.input}
-                  disabled={loadingPassword}
-                />
+                <div style={styles.inputWrapper}>
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    {...registerPassword('confirmPassword')}
+                    style={styles.input}
+                    disabled={loadingPassword}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    style={styles.toggleButton}
+                    disabled={loadingPassword}
+                  >
+                    {showConfirmPassword ? (
+                      <svg style={styles.icon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      </svg>
+                    ) : (
+                      <svg style={styles.icon} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
                 {errorsPassword.confirmPassword && (
                   <span style={styles.errorText}>{errorsPassword.confirmPassword.message}</span>
                 )}
@@ -330,21 +404,44 @@ const Profile = () => {
                 <input
                   type="text"
                   {...registerProfile('numeroOAB')}
-                  style={styles.input}
-                  disabled={loadingProfile}
+                  style={{
+                    ...styles.input,
+                    ...styles.inputDisabled,
+                  }}
+                  disabled={true}
                   placeholder="Ex: OAB123456"
                 />
               </div>
 
               <div style={styles.formGroup}>
                 <label style={styles.label}>Telefone</label>
-                <input
-                  type="text"
-                  {...registerProfile('telefone')}
-                  style={styles.input}
-                  disabled={loadingProfile}
-                  placeholder="(DDD) 99999-9999"
+                <Controller
+                  name="telefone"
+                  control={controlProfile}
+                  render={({ field }) => (
+                    <InputMask
+                      mask="(99) 99999-9999"
+                      value={field.value}
+                      onChange={field.onChange}
+                      disabled={loadingProfile}
+                    >
+                      {(inputProps) => (
+                        <input
+                          {...inputProps}
+                          type="text"
+                          style={{
+                            ...styles.input,
+                            ...(errorsProfile.telefone ? { borderColor: '#dc2626' } : {}),
+                          }}
+                          placeholder="(82) 99999-9999"
+                        />
+                      )}
+                    </InputMask>
+                  )}
                 />
+                {errorsProfile.telefone && (
+                  <span style={styles.errorText}>{errorsProfile.telefone.message}</span>
+                )}
               </div>
 
               <div style={styles.formGroup}>
@@ -650,12 +747,41 @@ const styles = {
     fontWeight: '600',
     color: '#374151',
   },
+  inputWrapper: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+  },
   input: {
-    padding: '0.75rem 1rem',
+    padding: '0.75rem 3rem 0.75rem 1rem',
     border: '1px solid #d1d5db',
     borderRadius: '0.5rem',
     fontSize: '0.9375rem',
     outline: 'none',
+    width: '100%',
+  },
+  inputDisabled: {
+    backgroundColor: '#f3f4f6',
+    color: '#6b7280',
+    cursor: 'not-allowed',
+    padding: '0.75rem 1rem',
+  },
+  toggleButton: {
+    position: 'absolute',
+    right: '0.75rem',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    padding: '0.25rem',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#6b7280',
+    transition: 'color 0.2s',
+  },
+  icon: {
+    width: '1.25rem',
+    height: '1.25rem',
   },
   errorText: {
     fontSize: '0.75rem',
