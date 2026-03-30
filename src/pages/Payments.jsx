@@ -7,6 +7,8 @@ const Payments = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('TODOS');
   const [currentPage, setCurrentPage] = useState(1);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const itemsPerPage = 5;
 
   useEffect(() => {
@@ -26,8 +28,27 @@ const Payments = () => {
   };
 
   const filteredPayments = payments.filter((payment) => {
-    if (filter === 'TODOS') return true;
-    return payment.status === filter;
+    const matchesStatus = filter === 'TODOS' || payment.status === filter;
+    
+    let matchesDate = true;
+    if (startDate || endDate) {
+      const paymentDate = new Date(payment.createdAt);
+      paymentDate.setHours(0, 0, 0, 0);
+      
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        matchesDate = matchesDate && paymentDate >= start;
+      }
+      
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        matchesDate = matchesDate && paymentDate <= end;
+      }
+    }
+    
+    return matchesStatus && matchesDate;
   });
 
   const totalPages = Math.ceil(filteredPayments.length / itemsPerPage);
@@ -37,7 +58,7 @@ const Payments = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [filter]);
+  }, [filter, startDate, endDate]);
 
   const stats = {
     total: payments.length,
@@ -108,17 +129,52 @@ const Payments = () => {
           <h3 style={styles.filterTitle}>Filtrar Pagamentos</h3>
         </div>
         <div style={styles.filterContent}>
-          <label style={styles.filterLabel}>Status</label>
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            style={styles.filterSelect}
-          >
-            <option value="TODOS">📋 Todos os Status</option>
-            <option value="APROVADO">✅ Aprovados</option>
-            <option value="PENDENTE">⏳ Pendentes</option>
-            <option value="CANCELADO">❌ Cancelados</option>
-          </select>
+          <div style={styles.filterRow}>
+            <div style={styles.filterGroup}>
+              <label style={styles.filterLabel}>Status</label>
+              <select
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                style={styles.filterSelect}
+              >
+                <option value="TODOS">📋 Todos os Status</option>
+                <option value="APROVADO">✅ Aprovados</option>
+                <option value="PENDENTE">⏳ Pendentes</option>
+                <option value="CANCELADO">❌ Cancelados</option>
+              </select>
+            </div>
+          </div>
+          <div style={styles.filterRow}>
+            <div style={styles.filterGroup}>
+              <label style={styles.filterLabel}>📅 Data Início</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                style={styles.filterInput}
+              />
+            </div>
+            <div style={styles.filterGroup}>
+              <label style={styles.filterLabel}>📅 Data Fim</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                style={styles.filterInput}
+              />
+            </div>
+          </div>
+          {(startDate || endDate) && (
+            <button
+              onClick={() => {
+                setStartDate('');
+                setEndDate('');
+              }}
+              style={styles.clearFiltersButton}
+            >
+              ❌ Limpar Filtros de Data
+            </button>
+          )}
         </div>
       </div>
 
@@ -328,6 +384,16 @@ const styles = {
   filterContent: {
     display: 'flex',
     flexDirection: 'column',
+    gap: '1rem',
+  },
+  filterRow: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
+    gap: '1rem',
+  },
+  filterGroup: {
+    display: 'flex',
+    flexDirection: 'column',
     gap: '0.5rem',
   },
   filterLabel: {
@@ -344,6 +410,29 @@ const styles = {
     backgroundColor: '#ffffff',
     cursor: 'pointer',
     transition: 'all 0.2s',
+  },
+  filterInput: {
+    padding: '0.875rem 1.25rem',
+    border: '2px solid #e5e7eb',
+    borderRadius: '0.75rem',
+    fontSize: '0.9375rem',
+    outline: 'none',
+    backgroundColor: '#ffffff',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    fontFamily: 'inherit',
+  },
+  clearFiltersButton: {
+    padding: '0.75rem 1.25rem',
+    backgroundColor: '#ef4444',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '0.75rem',
+    fontSize: '0.875rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    marginTop: '0.5rem',
   },
   emptyState: {
     display: 'flex',
