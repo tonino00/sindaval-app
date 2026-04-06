@@ -74,6 +74,17 @@ const PublicValidateCard = () => {
               {valid ? '✅ Carteira válida' : '❌ Carteira inválida'}
             </div>
 
+            {data?.fotoUrl && (
+              <div style={styles.photoSection}>
+                <img
+                  src={data.fotoUrl}
+                  alt={data?.nomeCompleto || 'Foto do sindicalizado'}
+                  style={styles.photo}
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+              </div>
+            )}
+
             <div style={styles.detailsBox}>
               <div style={styles.row}>
                 <span style={styles.label}>Nome</span>
@@ -194,6 +205,20 @@ const styles = {
   },
   reasonBox: {
     marginTop: '1rem',
+  },
+  photoSection: {
+    display: 'flex',
+    justifyContent: 'center',
+    marginTop: '1rem',
+    marginBottom: '0.5rem',
+  },
+  photo: {
+    width: '100px',
+    height: '100px',
+    borderRadius: '50%',
+    objectFit: 'cover',
+    border: '3px solid #1a365d',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
   },
   footer: {
     marginTop: '1.5rem',

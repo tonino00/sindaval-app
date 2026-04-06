@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
+import ConfirmModal from '../components/ConfirmModal';
 
 const AdminPayments = () => {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('TODOS');
   const [metodoFilter, setMetodoFilter] = useState('TODOS');
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
 
   useEffect(() => {
     fetchPayments();
@@ -23,15 +25,20 @@ const AdminPayments = () => {
     }
   };
 
-  const handleConfirmPayment = async (paymentId) => {
-    if (!window.confirm('Tem certeza que deseja confirmar este pagamento manualmente?')) return;
-
-    try {
-      await api.patch(`/payments/${paymentId}`, { status: 'APROVADO' });
-      await fetchPayments();
-    } catch (err) {
-      console.error('Erro ao confirmar pagamento:', err);
-    }
+  const handleConfirmPayment = (paymentId) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Confirmar Pagamento',
+      message: 'Tem certeza que deseja confirmar este pagamento manualmente? Esta ação irá alterar o status para APROVADO.',
+      onConfirm: async () => {
+        try {
+          await api.patch(`/payments/${paymentId}`, { status: 'APROVADO' });
+          await fetchPayments();
+        } catch (err) {
+          console.error('Erro ao confirmar pagamento:', err);
+        }
+      },
+    });
   };
 
   const filteredPayments = payments.filter(payment => {
@@ -218,6 +225,15 @@ const AdminPayments = () => {
           <li>O status real dos pagamentos vem diretamente do gateway de pagamento</li>
         </ul>
       </div>
+
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        variant="warning"
+      />
     </div>
   );
 };

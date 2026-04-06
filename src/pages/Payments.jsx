@@ -6,6 +6,10 @@ const Payments = () => {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('TODOS');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const itemsPerPage = 5;
 
   useEffect(() => {
     fetchPayments();
@@ -24,9 +28,37 @@ const Payments = () => {
   };
 
   const filteredPayments = payments.filter((payment) => {
-    if (filter === 'TODOS') return true;
-    return payment.status === filter;
+    const matchesStatus = filter === 'TODOS' || payment.status === filter;
+    
+    let matchesDate = true;
+    if (startDate || endDate) {
+      const paymentDate = new Date(payment.createdAt);
+      paymentDate.setHours(0, 0, 0, 0);
+      
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        matchesDate = matchesDate && paymentDate >= start;
+      }
+      
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        matchesDate = matchesDate && paymentDate <= end;
+      }
+    }
+    
+    return matchesStatus && matchesDate;
   });
+
+  const totalPages = Math.ceil(filteredPayments.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedPayments = filteredPayments.slice(startIndex, endIndex);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, startDate, endDate]);
 
   const stats = {
     total: payments.length,
@@ -97,17 +129,52 @@ const Payments = () => {
           <h3 style={styles.filterTitle}>Filtrar Pagamentos</h3>
         </div>
         <div style={styles.filterContent}>
-          <label style={styles.filterLabel}>Status</label>
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            style={styles.filterSelect}
-          >
-            <option value="TODOS">📋 Todos os Status</option>
-            <option value="APROVADO">✅ Aprovados</option>
-            <option value="PENDENTE">⏳ Pendentes</option>
-            <option value="CANCELADO">❌ Cancelados</option>
-          </select>
+          <div style={styles.filterRow}>
+            <div style={styles.filterGroup}>
+              <label style={styles.filterLabel}>Status</label>
+              <select
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                style={styles.filterSelect}
+              >
+                <option value="TODOS">📋 Todos os Status</option>
+                <option value="APROVADO">✅ Aprovados</option>
+                <option value="PENDENTE">⏳ Pendentes</option>
+                <option value="CANCELADO">❌ Cancelados</option>
+              </select>
+            </div>
+          </div>
+          <div style={styles.filterRow}>
+            <div style={styles.filterGroup}>
+              <label style={styles.filterLabel}>📅 Data Início</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                style={styles.filterInput}
+              />
+            </div>
+            <div style={styles.filterGroup}>
+              <label style={styles.filterLabel}>📅 Data Fim</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                style={styles.filterInput}
+              />
+            </div>
+          </div>
+          {(startDate || endDate) && (
+            <button
+              onClick={() => {
+                setStartDate('');
+                setEndDate('');
+              }}
+              style={styles.clearFiltersButton}
+            >
+              ❌ Limpar Filtros de Data
+            </button>
+          )}
         </div>
       </div>
 
@@ -119,23 +186,96 @@ const Payments = () => {
         </div>
       ) : (
         <div style={styles.timelineContainer}>
-          <div style={styles.timelineTitle}>
-            <div style={styles.timelineIcon}>🕒️</div>
-            <h3 style={styles.timelineTitleText}>Histórico de Pagamentos</h3>
-          </div>
-          {filteredPayments.map((payment) => (
-            <div key={payment.id} style={styles.paymentDetail}>
-              <div style={styles.detailIcon}>📝</div>
-              <div style={styles.detailContent}>
-                <p style={styles.detailLabel}>Data:</p>
-                <p style={styles.detailValue}>{formatDate(payment.createdAt)}</p>
-                <p style={styles.detailLabel}>Valor:</p>
-                <p style={styles.detailValue}>R$ {Number(payment.valor || 0).toFixed(2).replace('.', ',')}</p>
-                <p style={styles.detailLabel}>Status:</p>
-                <p style={styles.detailValue}>{payment.status}</p>
-              </div>
+          <div style={styles.timelineHeader}>
+            <div style={styles.timelineTitle}>
+              <div style={styles.timelineIcon}>🕒️</div>
+              <h3 style={styles.timelineTitleText}>Histórico de Pagamentos</h3>
             </div>
-          ))}
+            <div style={styles.paginationInfo}>
+              <span style={styles.paginationText}>
+                Mostrando {startIndex + 1}-{Math.min(endIndex, filteredPayments.length)} de {filteredPayments.length}
+              </span>
+            </div>
+          </div>
+
+          <div style={styles.paymentsGrid}>
+            {paginatedPayments.map((payment) => (
+              <div key={payment.id} style={styles.paymentCard}>
+                <div style={styles.paymentCardHeader}>
+                  <div style={styles.paymentCardIcon}>
+                    {payment.status === 'APROVADO' ? '✅' : payment.status === 'PENDENTE' ? '⏳' : '❌'}
+                  </div>
+                  <span
+                    style={{
+                      ...styles.paymentStatusBadge,
+                      ...(payment.status === 'APROVADO' ? styles.statusAprovado : {}),
+                      ...(payment.status === 'PENDENTE' ? styles.statusPendente : {}),
+                      ...(payment.status === 'CANCELADO' ? styles.statusCancelado : {}),
+                    }}
+                  >
+                    {payment.status}
+                  </span>
+                </div>
+                <div style={styles.paymentCardBody}>
+                  <div style={styles.paymentCardRow}>
+                    <span style={styles.paymentCardLabel}>📅 Data</span>
+                    <span style={styles.paymentCardValue}>{formatDate(payment.createdAt)}</span>
+                  </div>
+                  <div style={styles.paymentCardRow}>
+                    <span style={styles.paymentCardLabel}>💰 Valor</span>
+                    <span style={styles.paymentCardValueHighlight}>
+                      R$ {Number(payment.valor || 0).toFixed(2).replace('.', ',')}
+                    </span>
+                  </div>
+                  {payment.metodoPagamento && (
+                    <div style={styles.paymentCardRow}>
+                      <span style={styles.paymentCardLabel}>💳 Método</span>
+                      <span style={styles.paymentCardValue}>{payment.metodoPagamento}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div style={styles.pagination}>
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                style={{
+                  ...styles.paginationButton,
+                  ...(currentPage === 1 ? styles.paginationButtonDisabled : {}),
+                }}
+              >
+                ← Anterior
+              </button>
+              <div style={styles.paginationNumbers}>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    style={{
+                      ...styles.paginationNumber,
+                      ...(currentPage === page ? styles.paginationNumberActive : {}),
+                    }}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                style={{
+                  ...styles.paginationButton,
+                  ...(currentPage === totalPages ? styles.paginationButtonDisabled : {}),
+                }}
+              >
+                Próxima →
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -146,6 +286,7 @@ const styles = {
   container: {
     maxWidth: '1000px',
     margin: '0 auto',
+    padding: '0 1rem',
   },
   header: {
     marginBottom: '2rem',
@@ -164,18 +305,18 @@ const styles = {
   },
   statsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))',
-    gap: '1.5rem',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
+    gap: '1rem',
     marginBottom: '2rem',
   },
   statCard: {
     backgroundColor: '#ffffff',
-    padding: '1.75rem',
+    padding: '1.25rem',
     borderRadius: '1rem',
     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
     border: '1px solid #e5e7eb',
     display: 'flex',
-    gap: '1.25rem',
+    gap: '1rem',
     alignItems: 'flex-start',
   },
   statSuccess: {
@@ -191,7 +332,7 @@ const styles = {
     borderLeft: '4px solid #ef4444',
   },
   statIcon: {
-    fontSize: '2.5rem',
+    fontSize: '2rem',
     flexShrink: 0,
   },
   statContent: {
@@ -206,7 +347,7 @@ const styles = {
     letterSpacing: '0.05em',
   },
   statValue: {
-    fontSize: '1.875rem',
+    fontSize: '1.5rem',
     fontWeight: '800',
     color: '#111827',
     margin: '0 0 0.5rem 0',
@@ -243,6 +384,16 @@ const styles = {
   filterContent: {
     display: 'flex',
     flexDirection: 'column',
+    gap: '1rem',
+  },
+  filterRow: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
+    gap: '1rem',
+  },
+  filterGroup: {
+    display: 'flex',
+    flexDirection: 'column',
     gap: '0.5rem',
   },
   filterLabel: {
@@ -259,6 +410,29 @@ const styles = {
     backgroundColor: '#ffffff',
     cursor: 'pointer',
     transition: 'all 0.2s',
+  },
+  filterInput: {
+    padding: '0.875rem 1.25rem',
+    border: '2px solid #e5e7eb',
+    borderRadius: '0.75rem',
+    fontSize: '0.9375rem',
+    outline: 'none',
+    backgroundColor: '#ffffff',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    fontFamily: 'inherit',
+  },
+  clearFiltersButton: {
+    padding: '0.75rem 1.25rem',
+    backgroundColor: '#ef4444',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '0.75rem',
+    fontSize: '0.875rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    marginTop: '0.5rem',
   },
   emptyState: {
     display: 'flex',
@@ -286,18 +460,25 @@ const styles = {
   },
   timelineContainer: {
     backgroundColor: '#ffffff',
-    padding: '2rem',
+    padding: '1.25rem',
     borderRadius: '1rem',
     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
     border: '1px solid #e5e7eb',
+  },
+  timelineHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '1.5rem',
+    paddingBottom: '1rem',
+    borderBottom: '2px solid #f3f4f6',
+    flexWrap: 'wrap',
+    gap: '1rem',
   },
   timelineTitle: {
     display: 'flex',
     alignItems: 'center',
     gap: '0.75rem',
-    marginBottom: '2rem',
-    paddingBottom: '1rem',
-    borderBottom: '2px solid #f3f4f6',
   },
   timelineIcon: {
     fontSize: '1.5rem',
@@ -308,35 +489,138 @@ const styles = {
     color: '#1a365d',
     margin: 0,
   },
-  paymentDetail: {
+  paginationInfo: {
     display: 'flex',
     alignItems: 'center',
-    gap: '0.75rem',
-    padding: '1rem',
+  },
+  paginationText: {
+    fontSize: '0.8125rem',
+    fontWeight: '600',
+    color: '#6b7280',
+    whiteSpace: 'nowrap',
+  },
+  paymentsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))',
+    gap: '1rem',
+    marginBottom: '1.5rem',
+  },
+  paymentCard: {
     backgroundColor: '#ffffff',
+    border: '2px solid #e5e7eb',
     borderRadius: '0.75rem',
-    border: '1px solid #e5e7eb',
+    overflow: 'hidden',
+    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    cursor: 'default',
   },
-  detailIcon: {
+  paymentCardHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '1rem 1.25rem',
+    backgroundColor: '#f9fafb',
+    borderBottom: '1px solid #e5e7eb',
+  },
+  paymentCardIcon: {
     fontSize: '1.5rem',
-    flexShrink: 0,
   },
-  detailContent: {
+  paymentStatusBadge: {
+    padding: '0.375rem 0.875rem',
+    borderRadius: '9999px',
+    fontSize: '0.75rem',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: '0.025em',
+  },
+  statusAprovado: {
+    backgroundColor: '#d1fae5',
+    color: '#065f46',
+  },
+  statusPendente: {
+    backgroundColor: '#fef3c7',
+    color: '#92400e',
+  },
+  statusCancelado: {
+    backgroundColor: '#fee2e2',
+    color: '#991b1b',
+  },
+  paymentCardBody: {
+    padding: '1.25rem',
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.25rem',
+    gap: '0.875rem',
   },
-  detailLabel: {
-    fontSize: '0.75rem',
-    color: '#6b7280',
+  paymentCardRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  paymentCardLabel: {
+    fontSize: '0.875rem',
     fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
+    color: '#6b7280',
   },
-  detailValue: {
-    fontSize: '1rem',
+  paymentCardValue: {
+    fontSize: '0.9375rem',
+    fontWeight: '600',
     color: '#111827',
-    fontWeight: '700',
+  },
+  paymentCardValueHighlight: {
+    fontSize: '1.125rem',
+    fontWeight: '800',
+    color: '#1a365d',
+  },
+  pagination: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '0.5rem',
+    marginTop: '1.5rem',
+    paddingTop: '1.25rem',
+    borderTop: '1px solid #e5e7eb',
+    flexWrap: 'wrap',
+  },
+  paginationButton: {
+    padding: '0.625rem 1rem',
+    backgroundColor: '#1a365d',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '0.5rem',
+    fontSize: '0.8125rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    whiteSpace: 'nowrap',
+  },
+  paginationButtonDisabled: {
+    backgroundColor: '#e5e7eb',
+    color: '#9ca3af',
+    cursor: 'not-allowed',
+  },
+  paginationNumbers: {
+    display: 'flex',
+    gap: '0.5rem',
+  },
+  paginationNumber: {
+    minWidth: '36px',
+    height: '36px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '0 0.5rem',
+    backgroundColor: '#ffffff',
+    color: '#374151',
+    border: '2px solid #e5e7eb',
+    borderRadius: '0.5rem',
+    fontSize: '0.8125rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  },
+  paginationNumberActive: {
+    backgroundColor: '#1a365d',
+    color: '#ffffff',
+    borderColor: '#1a365d',
   },
   loadingState: {
     display: 'flex',

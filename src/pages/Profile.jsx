@@ -113,8 +113,8 @@ const Profile = () => {
 
     try {
       await api.patch('/users/me/password', {
-        currentPassword: data.currentPassword,
-        newPassword: data.newPassword,
+        senhaAtual: data.currentPassword,
+        novaSenha: data.newPassword,
       });
       setSuccessPassword('Senha alterada com sucesso!');
       resetPassword();
@@ -928,7 +928,7 @@ const styles = {
     width: '100%',
   },
   buttonDisabled: {
-    backgroundColor: '#9ca3af',
+    background: '#9ca3af',
     cursor: 'not-allowed',
     opacity: 0.6,
   },

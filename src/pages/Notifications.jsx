@@ -8,6 +8,9 @@ const Notifications = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filter, setFilter] = useState('TODAS');
+  const itemsPerPage = 5;
 
   useEffect(() => {
     fetchNotifications();
@@ -41,6 +44,22 @@ const Notifications = () => {
     }
   };
 
+  const filteredNotifications = notifications.filter((notif) => {
+    if (filter === 'TODAS') return true;
+    if (filter === 'NAO_LIDAS') return !notif.lida;
+    if (filter === 'LIDAS') return notif.lida;
+    return true;
+  });
+
+  const totalPages = Math.ceil(filteredNotifications.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedNotifications = filteredNotifications.slice(startIndex, endIndex);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter]);
+
   const markAsRead = async (id) => {
     try {
       await api.patch(`/notifications/me/notifications/${id}/read`);
@@ -70,19 +89,60 @@ const Notifications = () => {
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <h1 style={styles.title}>Notificações</h1>
+        <div>
+          <h1 style={styles.title}>Notificações</h1>
+          <p style={styles.subtitle}>Acompanhe todas as suas notificações</p>
+        </div>
         {unreadCount > 0 && (
           <span style={styles.badge}>{unreadCount} não lida{unreadCount > 1 ? 's' : ''}</span>
         )}
       </div>
 
-      {notifications.length === 0 ? (
+      <div style={styles.filterCard}>
+        <div style={styles.filterHeader}>
+          <div style={styles.filterIcon}>🔍</div>
+          <h3 style={styles.filterTitle}>Filtrar Notificações</h3>
+        </div>
+        <div style={styles.filterContent}>
+          <div style={styles.filterRow}>
+            <div style={styles.filterGroup}>
+              <label style={styles.filterLabel}>Status</label>
+              <select
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                style={styles.filterSelect}
+              >
+                <option value="TODAS">📋 Todas</option>
+                <option value="NAO_LIDAS">🔔 Não Lidas</option>
+                <option value="LIDAS">✅ Lidas</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {filteredNotifications.length === 0 ? (
         <div style={styles.emptyState}>
+          <div style={styles.emptyIcon}>📭</div>
           <p style={styles.emptyText}>Nenhuma notificação encontrada</p>
+          <p style={styles.emptySubtext}>Tente filtrar por outro status ou aguarde novas notificações.</p>
         </div>
       ) : (
-        <div style={styles.notificationsList}>
-          {notifications.map((notif) => (
+        <div style={styles.notificationsContainer}>
+          <div style={styles.notificationsHeader}>
+            <div style={styles.notificationsTitle}>
+              <div style={styles.notificationsTitleIcon}>📬</div>
+              <h3 style={styles.notificationsTitleText}>Lista de Notificações</h3>
+            </div>
+            <div style={styles.paginationInfo}>
+              <span style={styles.paginationText}>
+                Mostrando {startIndex + 1}-{Math.min(endIndex, filteredNotifications.length)} de {filteredNotifications.length}
+              </span>
+            </div>
+          </div>
+
+          <div style={styles.notificationsList}>
+            {paginatedNotifications.map((notif) => (
             <div
               key={notif.id}
               style={{
@@ -137,6 +197,46 @@ const Notifications = () => {
               </div>
             </div>
           ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div style={styles.pagination}>
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                style={{
+                  ...styles.paginationButton,
+                  ...(currentPage === 1 ? styles.paginationButtonDisabled : {}),
+                }}
+              >
+                ← Anterior
+              </button>
+              <div style={styles.paginationNumbers}>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    style={{
+                      ...styles.paginationNumber,
+                      ...(currentPage === page ? styles.paginationNumberActive : {}),
+                    }}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                style={{
+                  ...styles.paginationButton,
+                  ...(currentPage === totalPages ? styles.paginationButtonDisabled : {}),
+                }}
+              >
+                Próxima →
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -147,17 +247,27 @@ const styles = {
   container: {
     maxWidth: '900px',
     margin: '0 auto',
+    padding: '0 1rem',
   },
   header: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: '2rem',
+    flexWrap: 'wrap',
+    gap: '1rem',
   },
   title: {
-    fontSize: '1.875rem',
-    fontWeight: '700',
-    color: '#111827',
+    fontSize: '2rem',
+    fontWeight: '800',
+    color: '#1a365d',
+    marginBottom: '0.5rem',
+    letterSpacing: '-0.025em',
+  },
+  subtitle: {
+    fontSize: '1rem',
+    color: '#6b7280',
+    fontWeight: '400',
   },
   badge: {
     padding: '0.5rem 1rem',
@@ -176,28 +286,136 @@ const styles = {
     fontSize: '0.875rem',
     fontWeight: '500',
   },
-  emptyState: {
-    padding: '3rem',
-    textAlign: 'center',
+  filterCard: {
     backgroundColor: '#ffffff',
+    padding: '1.5rem',
+    borderRadius: '1rem',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+    border: '1px solid #e5e7eb',
+    marginBottom: '2rem',
+  },
+  filterHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+    marginBottom: '1rem',
+  },
+  filterIcon: {
+    fontSize: '1.5rem',
+  },
+  filterTitle: {
+    fontSize: '1rem',
+    fontWeight: '700',
+    color: '#1a365d',
+    margin: 0,
+  },
+  filterContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem',
+  },
+  filterRow: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
+    gap: '1rem',
+  },
+  filterGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem',
+  },
+  filterLabel: {
+    fontSize: '0.875rem',
+    fontWeight: '600',
+    color: '#374151',
+  },
+  filterSelect: {
+    padding: '0.875rem 1.25rem',
+    border: '2px solid #e5e7eb',
     borderRadius: '0.75rem',
+    fontSize: '0.9375rem',
+    outline: 'none',
+    backgroundColor: '#ffffff',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  },
+  emptyState: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '4rem 2rem',
+    gap: '0.75rem',
+    backgroundColor: '#ffffff',
+    borderRadius: '1rem',
     border: '1px solid #e5e7eb',
   },
+  emptyIcon: {
+    fontSize: '4rem',
+  },
   emptyText: {
-    fontSize: '1rem',
+    fontSize: '1.125rem',
+    color: '#111827',
+    fontWeight: '600',
+  },
+  emptySubtext: {
+    fontSize: '0.875rem',
     color: '#6b7280',
+    textAlign: 'center',
+  },
+  notificationsContainer: {
+    backgroundColor: '#ffffff',
+    padding: '1.25rem',
+    borderRadius: '1rem',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+    border: '1px solid #e5e7eb',
+  },
+  notificationsHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '1.5rem',
+    paddingBottom: '1rem',
+    borderBottom: '2px solid #f3f4f6',
+    flexWrap: 'wrap',
+    gap: '1rem',
+  },
+  notificationsTitle: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+  },
+  notificationsTitleIcon: {
+    fontSize: '1.5rem',
+  },
+  notificationsTitleText: {
+    fontSize: '1.125rem',
+    fontWeight: '700',
+    color: '#1a365d',
+    margin: 0,
+  },
+  paginationInfo: {
+    display: 'flex',
+    alignItems: 'center',
+  },
+  paginationText: {
+    fontSize: '0.8125rem',
+    fontWeight: '600',
+    color: '#6b7280',
+    whiteSpace: 'nowrap',
   },
   notificationsList: {
     display: 'flex',
     flexDirection: 'column',
     gap: '1rem',
+    marginBottom: '1.5rem',
   },
   notificationCard: {
     backgroundColor: '#ffffff',
-    padding: '1.5rem',
+    padding: '1.25rem',
     borderRadius: '0.75rem',
     boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-    border: '1px solid #e5e7eb',
+    border: '2px solid #e5e7eb',
     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
   },
   notificationUnread: {
@@ -209,6 +427,8 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: '1rem',
+    flexWrap: 'wrap',
+    gap: '0.75rem',
   },
   notificationTitle: {
     fontSize: '1.125rem',
@@ -269,6 +489,58 @@ const styles = {
     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
     boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
     whiteSpace: 'nowrap',
+  },
+  pagination: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '0.5rem',
+    marginTop: '1.5rem',
+    paddingTop: '1.25rem',
+    borderTop: '1px solid #e5e7eb',
+    flexWrap: 'wrap',
+  },
+  paginationButton: {
+    padding: '0.625rem 1rem',
+    backgroundColor: '#1a365d',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '0.5rem',
+    fontSize: '0.8125rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+    whiteSpace: 'nowrap',
+  },
+  paginationButtonDisabled: {
+    backgroundColor: '#e5e7eb',
+    color: '#9ca3af',
+    cursor: 'not-allowed',
+  },
+  paginationNumbers: {
+    display: 'flex',
+    gap: '0.5rem',
+  },
+  paginationNumber: {
+    minWidth: '36px',
+    height: '36px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '0 0.5rem',
+    backgroundColor: '#ffffff',
+    color: '#374151',
+    border: '2px solid #e5e7eb',
+    borderRadius: '0.5rem',
+    fontSize: '0.8125rem',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  },
+  paginationNumberActive: {
+    backgroundColor: '#1a365d',
+    color: '#ffffff',
+    borderColor: '#1a365d',
   },
 };
 
