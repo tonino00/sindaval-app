@@ -9,7 +9,7 @@ const notificationSchema = z.object({
   titulo: z.string().min(3, 'Título deve ter no mínimo 3 caracteres'),
   mensagem: z.string().min(10, 'Mensagem deve ter no mínimo 10 caracteres'),
   tipo: z.enum(['GERAL', 'INDIVIDUAL']),
-  canal: z.enum(['INTERNA', 'EMAIL', 'WHATSAPP', 'MULTICANAL']),
+  canal: z.enum(['INTERNA', 'EMAIL']),
 });
 
 const userSchema = z.object({
@@ -98,7 +98,7 @@ const Admin = () => {
         canal: data.canal,
       };
 
-      if (data.tipo === 'INDIVIDUAL' && (data.canal === 'EMAIL' || data.canal === 'MULTICANAL')) {
+      if (data.tipo === 'INDIVIDUAL' && data.canal === 'EMAIL') {
         payload.destinatario = destinatarioEmail;
       }
 
@@ -331,13 +331,11 @@ const Admin = () => {
                 <select {...registerNotification('canal')} style={styles.select}>
                   <option value="INTERNA">Interna</option>
                   <option value="EMAIL">Email</option>
-                  <option value="WHATSAPP">WhatsApp</option>
-                  <option value="MULTICANAL">Multicanal</option>
                 </select>
               </div>
             </div>
 
-            {tipoNotificacao === 'INDIVIDUAL' && (canalNotificacao === 'EMAIL' || canalNotificacao === 'MULTICANAL') && (
+            {tipoNotificacao === 'INDIVIDUAL' && canalNotificacao === 'EMAIL' && (
               <div style={styles.formGroup}>
                 <label style={styles.label}>Email do Usuário</label>
                 <input
