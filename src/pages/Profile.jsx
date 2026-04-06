@@ -928,7 +928,7 @@ const styles = {
     width: '100%',
   },
   buttonDisabled: {
-    backgroundColor: '#9ca3af',
+    background: '#9ca3af',
     cursor: 'not-allowed',
     opacity: 0.6,
   },
