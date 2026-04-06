@@ -213,9 +213,8 @@ const styles = {
     marginBottom: '0.5rem',
   },
   photo: {
-    width: '100px',
-    height: '100px',
-    borderRadius: '50%',
+    width: '300px',
+    height: '450px',
     objectFit: 'cover',
     border: '3px solid #1a365d',
     boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
