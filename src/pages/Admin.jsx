@@ -337,14 +337,19 @@ const Admin = () => {
 
             {tipoNotificacao === 'INDIVIDUAL' && canalNotificacao === 'EMAIL' && (
               <div style={styles.formGroup}>
-                <label style={styles.label}>Email do Usuário</label>
-                <input
-                  type="email"
+                <label style={styles.label}>Destinatário</label>
+                <select
                   value={destinatarioEmail}
                   onChange={(e) => setDestinatarioEmail(e.target.value)}
-                  style={styles.input}
-                  placeholder="email@exemplo.com"
-                />
+                  style={styles.select}
+                >
+                  <option value="">Selecione um usuário...</option>
+                  {users.map((u) => (
+                    <option key={u.id} value={u.email}>
+                      {u.nomeCompleto} — {u.email}
+                    </option>
+                  ))}
+                </select>
               </div>
             )}
 
