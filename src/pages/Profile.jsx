@@ -113,8 +113,8 @@ const Profile = () => {
 
     try {
       await api.patch('/users/me/password', {
-        currentPassword: data.currentPassword,
-        newPassword: data.newPassword,
+        senhaAtual: data.currentPassword,
+        novaSenha: data.newPassword,
       });
       setSuccessPassword('Senha alterada com sucesso!');
       resetPassword();
