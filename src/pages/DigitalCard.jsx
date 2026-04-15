@@ -9,6 +9,12 @@ const DigitalCard = () => {
   const [qrCode, setQrCode] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const shimmerCss = `
+    @keyframes digitalCard_shimmer {
+      0% { background-position: -600px 0; }
+      100% { background-position: 600px 0; }
+    }
+  `;
 
   useEffect(() => {
     generateQRCode();
@@ -39,7 +45,48 @@ const DigitalCard = () => {
   if (loading) {
     return (
       <div style={styles.container}>
-        <p>Carregando carteira digital...</p>
+        <style>{shimmerCss}</style>
+        <div style={styles.skeletonPage} aria-busy="true" aria-live="polite">
+          <div style={styles.skeletonHeader}>
+            <div style={{ ...styles.skeletonLine, width: '55%' }} />
+            <div style={{ ...styles.skeletonLine, width: '70%' }} />
+            <div style={{ ...styles.skeletonLine, width: '62%' }} />
+          </div>
+
+          <div style={styles.skeletonNotice}>
+            <div style={{ ...styles.skeletonPill, width: '110px' }} />
+            <div style={{ ...styles.skeletonLine, width: '70%' }} />
+          </div>
+
+          <div style={styles.skeletonCard}>
+            <div style={styles.skeletonCardHeader}>
+              <div style={{ ...styles.skeletonLineDark, width: '140px' }} />
+              <div style={{ ...styles.skeletonLineDark, width: '240px' }} />
+            </div>
+
+            <div style={styles.skeletonCardBody}>
+              <div style={styles.skeletonMainRow}>
+                <div style={styles.skeletonPhoto} />
+                <div style={styles.skeletonData}>
+                  <div style={{ ...styles.skeletonLine, width: '75%' }} />
+                  <div style={{ ...styles.skeletonLine, width: '65%' }} />
+                  <div style={{ ...styles.skeletonLine, width: '70%' }} />
+                  <div style={{ ...styles.skeletonLine, width: '55%' }} />
+                </div>
+              </div>
+              <div style={styles.skeletonQrArea}>
+                <div style={styles.skeletonQrBox} />
+                <div style={{ ...styles.skeletonLine, width: '60%' }} />
+              </div>
+            </div>
+          </div>
+
+          <div style={styles.skeletonInstructions}>
+            <div style={{ ...styles.skeletonLine, width: '45%' }} />
+            <div style={{ ...styles.skeletonLine, width: '88%' }} />
+            <div style={{ ...styles.skeletonLine, width: '82%' }} />
+          </div>
+        </div>
       </div>
     );
   }
@@ -78,17 +125,21 @@ const DigitalCard = () => {
           <div style={styles.cardBody}>
             <div style={styles.mainContent}>
               <div style={styles.photoSection}>
-                {user?.fotoUrl ? (
-                  <img 
-                    src={user.fotoUrl} 
-                    alt={user.nomeCompleto}
-                    style={styles.userPhotoLarge}
-                  />
-                ) : (
+                <div style={styles.userPhotoWrap}>
                   <div style={styles.userPhotoPlaceholder}>
                     {user?.nomeCompleto?.charAt(0).toUpperCase() || 'U'}
                   </div>
-                )}
+                  {user?.fotoUrl && (
+                    <img
+                      src={user.fotoUrl}
+                      alt={user.nomeCompleto}
+                      style={styles.userPhotoLarge}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  )}
+                </div>
                 <div style={styles.photoLabel}>FOTO</div>
               </div>
               
@@ -176,8 +227,9 @@ const DigitalCard = () => {
                   </div>
                 ) : (
                   <div style={styles.qrCodeLoading}>
-                    <div style={styles.loadingSpinner}>⏳</div>
-                    <p style={styles.loadingText}>Gerando QR Code...</p>
+                    <style>{shimmerCss}</style>
+                    <div style={styles.qrSkeletonBox} />
+                    <p style={styles.qrLoadingText}>Gerando QR Code...</p>
                   </div>
                 )}
               </div>
@@ -233,6 +285,121 @@ const styles = {
   container: {
     maxWidth: '1400px',
     margin: '0 auto',
+  },
+  userPhotoWrap: {
+    position: 'relative',
+    width: '140px',
+    height: '180px',
+  },
+  skeletonPage: {
+    paddingTop: '1.5rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.25rem',
+  },
+  skeletonHeader: {
+    textAlign: 'center',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '0.75rem',
+    padding: '0 1rem',
+  },
+  skeletonNotice: {
+    backgroundColor: '#ffffff',
+    border: '1px solid #e5e7eb',
+    borderRadius: '0.75rem',
+    padding: '1rem 1.25rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.75rem',
+  },
+  skeletonCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: '1.25rem',
+    border: '1px solid #e5e7eb',
+    overflow: 'hidden',
+    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.08)',
+  },
+  skeletonCardHeader: {
+    backgroundColor: '#1a365d',
+    padding: '1.5rem 2rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.75rem',
+  },
+  skeletonCardBody: {
+    padding: '2.5rem 2rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2rem',
+  },
+  skeletonMainRow: {
+    display: 'flex',
+    gap: '2rem',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+  },
+  skeletonPhoto: {
+    width: '140px',
+    height: '180px',
+    borderRadius: '0.25rem',
+    border: '3px solid #1a365d',
+    backgroundImage: 'linear-gradient(90deg, #e5e7eb 0%, #f3f4f6 40%, #e5e7eb 80%)',
+    backgroundSize: '600px 100%',
+    animation: 'digitalCard_shimmer 1.25s linear infinite',
+  },
+  skeletonData: {
+    flex: 1,
+    minWidth: '280px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem',
+  },
+  skeletonQrArea: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '1rem',
+  },
+  skeletonQrBox: {
+    width: '220px',
+    height: '220px',
+    borderRadius: '1rem',
+    border: '3px solid #1a365d',
+    backgroundImage: 'linear-gradient(90deg, #e5e7eb 0%, #f3f4f6 40%, #e5e7eb 80%)',
+    backgroundSize: '600px 100%',
+    animation: 'digitalCard_shimmer 1.25s linear infinite',
+  },
+  skeletonInstructions: {
+    backgroundColor: '#ffffff',
+    borderRadius: '1rem',
+    border: '1px solid #e5e7eb',
+    padding: '2rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.85rem',
+  },
+  skeletonLine: {
+    height: '14px',
+    borderRadius: '999px',
+    backgroundImage: 'linear-gradient(90deg, #e5e7eb 0%, #f3f4f6 40%, #e5e7eb 80%)',
+    backgroundSize: '600px 100%',
+    animation: 'digitalCard_shimmer 1.25s linear infinite',
+  },
+  skeletonLineDark: {
+    height: '14px',
+    borderRadius: '999px',
+    backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.45) 40%, rgba(255,255,255,0.25) 80%)',
+    backgroundSize: '600px 100%',
+    animation: 'digitalCard_shimmer 1.25s linear infinite',
+  },
+  skeletonPill: {
+    height: '22px',
+    borderRadius: '999px',
+    backgroundImage: 'linear-gradient(90deg, #e5e7eb 0%, #f3f4f6 40%, #e5e7eb 80%)',
+    backgroundSize: '600px 100%',
+    animation: 'digitalCard_shimmer 1.25s linear infinite',
   },
   publicQrNotice: {
     display: 'flex',
@@ -385,10 +552,13 @@ const styles = {
     letterSpacing: '0.1em',
   },
   userPhotoLarge: {
+    position: 'absolute',
+    inset: 0,
     width: '140px',
     height: '180px',
     objectFit: 'cover',
     border: '3px solid #1a365d',
+    borderRadius: '0.25rem',
     boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
   },
   userPhotoPlaceholder: {
@@ -396,6 +566,7 @@ const styles = {
     height: '180px',
     backgroundColor: '#f3f4f6',
     border: '3px solid #1a365d',
+    borderRadius: '0.25rem',
     color: '#6b7280',
     display: 'flex',
     alignItems: 'center',
@@ -689,7 +860,16 @@ const styles = {
   loadingSpinner: {
     fontSize: '3rem',
   },
-  loadingText: {
+  qrSkeletonBox: {
+    width: '220px',
+    height: '220px',
+    borderRadius: '1rem',
+    border: '3px solid #1a365d',
+    backgroundImage: 'linear-gradient(90deg, #e5e7eb 0%, #f3f4f6 40%, #e5e7eb 80%)',
+    backgroundSize: '600px 100%',
+    animation: 'digitalCard_shimmer 1.25s linear infinite',
+  },
+  qrLoadingText: {
     fontSize: '0.875rem',
     color: '#6b7280',
     fontWeight: '500',

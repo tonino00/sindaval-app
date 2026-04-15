@@ -21,9 +21,15 @@ const Reports = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const shimmerCss = `
+    @keyframes reports_shimmer {
+      0% { background-position: -600px 0; }
+      100% { background-position: 600px 0; }
+    }
+  `;
   const [filters, setFilters] = useState({
     tipo: 'usuarios',
-    formato: 'csv',
+    formato: 'pdf',
     dataInicio: '',
     dataFim: '',
     status: '',
@@ -337,6 +343,7 @@ const Reports = () => {
 
   return (
     <div style={styles.container}>
+      <style>{shimmerCss}</style>
       <div style={styles.header}>
         <div>
           <h1 style={styles.title}>Relatórios e Análises</h1>
@@ -364,7 +371,21 @@ const Reports = () => {
           </div>
           {loadingPreview ? (
             <div style={styles.loadingPreview}>
-              <p>⏳ Carregando preview...</p>
+              <div style={styles.skeletonStack}>
+                <div style={styles.skeletonRow}>
+                  <div style={{ ...styles.skeletonLine, width: '55%' }} />
+                  <div style={{ ...styles.skeletonLine, width: '25%' }} />
+                </div>
+                <div style={styles.skeletonRow}>
+                  <div style={{ ...styles.skeletonLine, width: '62%' }} />
+                  <div style={{ ...styles.skeletonLine, width: '20%' }} />
+                </div>
+                <div style={styles.skeletonRow}>
+                  <div style={{ ...styles.skeletonLine, width: '48%' }} />
+                  <div style={{ ...styles.skeletonLine, width: '30%' }} />
+                </div>
+                <div style={styles.skeletonChart} />
+              </div>
             </div>
           ) : Object.keys(preview).length > 0 ? (
             <>
@@ -428,7 +449,6 @@ const Reports = () => {
                   onChange={(e) => setFilters({ ...filters, formato: e.target.value })}
                   style={styles.select}
                 >
-                  <option value="csv">CSV</option>
                   <option value="pdf">PDF</option>
                   <option value="xlsx">Excel (XLSX)</option>
                 </select>
@@ -496,13 +516,6 @@ const Reports = () => {
           <h3 style={styles.infoTitle}>Informações sobre Relatórios</h3>
         </div>
         <div style={styles.infoGrid}>
-          <div style={styles.infoItem}>
-            <div style={styles.infoItemIcon}>📄</div>
-            <div>
-              <h4 style={styles.infoItemTitle}>CSV</h4>
-              <p style={styles.infoItemText}>Compatível com Excel e planilhas</p>
-            </div>
-          </div>
           <div style={styles.infoItem}>
             <div style={styles.infoItemIcon}>📋</div>
             <div>
@@ -774,6 +787,30 @@ const styles = {
     textAlign: 'center',
     color: '#6b7280',
     fontSize: '0.875rem',
+  },
+  skeletonStack: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.85rem',
+  },
+  skeletonRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: '1rem',
+  },
+  skeletonLine: {
+    height: '14px',
+    borderRadius: '999px',
+    backgroundImage: 'linear-gradient(90deg, #e5e7eb 0%, #f3f4f6 40%, #e5e7eb 80%)',
+    backgroundSize: '600px 100%',
+    animation: 'reports_shimmer 1.25s linear infinite',
+  },
+  skeletonChart: {
+    height: '220px',
+    borderRadius: '0.75rem',
+    backgroundImage: 'linear-gradient(90deg, #e5e7eb 0%, #f3f4f6 40%, #e5e7eb 80%)',
+    backgroundSize: '600px 100%',
+    animation: 'reports_shimmer 1.25s linear infinite',
   },
   emptyPreview: {
     padding: '3rem 2rem',

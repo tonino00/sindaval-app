@@ -76,6 +76,12 @@ const ManageAgreements = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const shimmerCss = `
+    @keyframes manageAgreements_shimmer {
+      0% { background-position: -600px 0; }
+      100% { background-position: 600px 0; }
+    }
+  `;
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [editingId, setEditingId] = useState(null);
@@ -267,10 +273,11 @@ const ManageAgreements = () => {
 
   return (
     <div style={styles.container}>
+      <style>{shimmerCss}</style>
       <div style={styles.header}>
         <div>
           <h1 style={styles.title}>Gestão de Convênios</h1>
-          <p style={styles.subtitle}>Crie, edite e gerencie convênios do sindicato</p>
+          <p style={styles.subtitle}>Crie, edite e gerencie convênios disponíveis</p>
         </div>
         <div style={styles.headerStats}>
           <div style={styles.statBadge}>
@@ -418,8 +425,21 @@ const ManageAgreements = () => {
           </div>
           {loading ? (
             <div style={styles.loadingState}>
-              <div style={styles.loadingSpinner}>⏳</div>
-              <p style={styles.loadingText}>Carregando convênios...</p>
+              <div style={styles.skeletonStack}>
+                <div style={styles.skeletonRow}>
+                  <div style={{ ...styles.skeletonLine, width: '55%' }} />
+                  <div style={{ ...styles.skeletonLine, width: '25%' }} />
+                </div>
+                <div style={styles.skeletonRow}>
+                  <div style={{ ...styles.skeletonLine, width: '62%' }} />
+                  <div style={{ ...styles.skeletonLine, width: '20%' }} />
+                </div>
+                <div style={styles.skeletonRow}>
+                  <div style={{ ...styles.skeletonLine, width: '48%' }} />
+                  <div style={{ ...styles.skeletonLine, width: '30%' }} />
+                </div>
+                <div style={styles.skeletonBlock} />
+              </div>
             </div>
           ) : agreements.length === 0 ? (
             <div style={styles.emptyState}>
@@ -979,6 +999,32 @@ const styles = {
     fontSize: '1rem',
     color: '#6b7280',
     fontWeight: '500',
+  },
+  skeletonStack: {
+    width: '100%',
+    maxWidth: '720px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.85rem',
+  },
+  skeletonRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: '1rem',
+  },
+  skeletonLine: {
+    height: '14px',
+    borderRadius: '999px',
+    backgroundImage: 'linear-gradient(90deg, #e5e7eb 0%, #f3f4f6 40%, #e5e7eb 80%)',
+    backgroundSize: '600px 100%',
+    animation: 'manageAgreements_shimmer 1.25s linear infinite',
+  },
+  skeletonBlock: {
+    height: '180px',
+    borderRadius: '0.75rem',
+    backgroundImage: 'linear-gradient(90deg, #e5e7eb 0%, #f3f4f6 40%, #e5e7eb 80%)',
+    backgroundSize: '600px 100%',
+    animation: 'manageAgreements_shimmer 1.25s linear infinite',
   },
   emptyState: {
     display: 'flex',

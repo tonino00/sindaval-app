@@ -10,6 +10,12 @@ const Dashboard = () => {
   const [notifications, setNotifications] = useState([]);
   const [loadingPayments, setLoadingPayments] = useState(true);
   const [loadingNotifications, setLoadingNotifications] = useState(true);
+  const shimmerCss = `
+    @keyframes dashboard_shimmer {
+      0% { background-position: -600px 0; }
+      100% { background-position: 600px 0; }
+    }
+  `;
 
   useEffect(() => {
     const fetchPayments = async () => {
@@ -40,6 +46,7 @@ const Dashboard = () => {
 
   return (
     <div style={styles.container}>
+      <style>{shimmerCss}</style>
       <h1 style={styles.title}>Dashboard</h1>
 
       <div style={styles.grid}>
@@ -101,7 +108,41 @@ const Dashboard = () => {
             </button>
           </div>
           {loadingPayments ? (
-            <p style={styles.loadingText}>Carregando...</p>
+            <div style={styles.skeletonList}>
+              <div style={styles.skeletonItem}>
+                <div style={styles.skeletonIcon} />
+                <div style={styles.skeletonContent}>
+                  <div style={{ ...styles.skeletonLine, width: '55%' }} />
+                  <div style={{ ...styles.skeletonLine, width: '35%' }} />
+                </div>
+                <div style={styles.skeletonRight}>
+                  <div style={{ ...styles.skeletonLine, width: '70px' }} />
+                  <div style={{ ...styles.skeletonPill, width: '90px' }} />
+                </div>
+              </div>
+              <div style={styles.skeletonItem}>
+                <div style={styles.skeletonIcon} />
+                <div style={styles.skeletonContent}>
+                  <div style={{ ...styles.skeletonLine, width: '60%' }} />
+                  <div style={{ ...styles.skeletonLine, width: '30%' }} />
+                </div>
+                <div style={styles.skeletonRight}>
+                  <div style={{ ...styles.skeletonLine, width: '70px' }} />
+                  <div style={{ ...styles.skeletonPill, width: '90px' }} />
+                </div>
+              </div>
+              <div style={styles.skeletonItem}>
+                <div style={styles.skeletonIcon} />
+                <div style={styles.skeletonContent}>
+                  <div style={{ ...styles.skeletonLine, width: '52%' }} />
+                  <div style={{ ...styles.skeletonLine, width: '38%' }} />
+                </div>
+                <div style={styles.skeletonRight}>
+                  <div style={{ ...styles.skeletonLine, width: '70px' }} />
+                  <div style={{ ...styles.skeletonPill, width: '90px' }} />
+                </div>
+              </div>
+            </div>
           ) : payments.length > 0 ? (
             <div style={styles.listContainer}>
               {payments.map((payment) => (
@@ -152,7 +193,38 @@ const Dashboard = () => {
             </button>
           </div>
           {loadingNotifications ? (
-            <p style={styles.loadingText}>Carregando...</p>
+            <div style={styles.skeletonList}>
+              <div style={styles.skeletonItem}>
+                <div style={styles.skeletonIcon} />
+                <div style={styles.skeletonContent}>
+                  <div style={{ ...styles.skeletonLine, width: '70%' }} />
+                  <div style={{ ...styles.skeletonLine, width: '35%' }} />
+                </div>
+                <div style={styles.skeletonRight}>
+                  <div style={{ ...styles.skeletonPill, width: '60px' }} />
+                </div>
+              </div>
+              <div style={styles.skeletonItem}>
+                <div style={styles.skeletonIcon} />
+                <div style={styles.skeletonContent}>
+                  <div style={{ ...styles.skeletonLine, width: '62%' }} />
+                  <div style={{ ...styles.skeletonLine, width: '40%' }} />
+                </div>
+                <div style={styles.skeletonRight}>
+                  <div style={{ ...styles.skeletonPill, width: '60px' }} />
+                </div>
+              </div>
+              <div style={styles.skeletonItem}>
+                <div style={styles.skeletonIcon} />
+                <div style={styles.skeletonContent}>
+                  <div style={{ ...styles.skeletonLine, width: '68%' }} />
+                  <div style={{ ...styles.skeletonLine, width: '33%' }} />
+                </div>
+                <div style={styles.skeletonRight}>
+                  <div style={{ ...styles.skeletonPill, width: '60px' }} />
+                </div>
+              </div>
+            </div>
           ) : notifications.length > 0 ? (
             <div style={styles.listContainer}>
               {notifications.map((notification) => (
@@ -466,6 +538,59 @@ const styles = {
     textAlign: 'center',
     padding: '2rem',
     margin: 0,
+  },
+  skeletonList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.75rem',
+    padding: '0.25rem 0',
+  },
+  skeletonItem: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '1rem',
+    backgroundColor: '#f9fafb',
+    borderRadius: '0.5rem',
+    border: '1px solid #e5e7eb',
+  },
+  skeletonIcon: {
+    width: '28px',
+    height: '28px',
+    borderRadius: '0.5rem',
+    backgroundImage: 'linear-gradient(90deg, #e5e7eb 0%, #f3f4f6 40%, #e5e7eb 80%)',
+    backgroundSize: '600px 100%',
+    animation: 'dashboard_shimmer 1.25s linear infinite',
+    flexShrink: 0,
+  },
+  skeletonContent: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem',
+    paddingLeft: '1rem',
+    paddingRight: '1rem',
+  },
+  skeletonRight: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: '0.5rem',
+    minWidth: '90px',
+  },
+  skeletonLine: {
+    height: '12px',
+    borderRadius: '999px',
+    backgroundImage: 'linear-gradient(90deg, #e5e7eb 0%, #f3f4f6 40%, #e5e7eb 80%)',
+    backgroundSize: '600px 100%',
+    animation: 'dashboard_shimmer 1.25s linear infinite',
+  },
+  skeletonPill: {
+    height: '20px',
+    borderRadius: '999px',
+    backgroundImage: 'linear-gradient(90deg, #e5e7eb 0%, #f3f4f6 40%, #e5e7eb 80%)',
+    backgroundSize: '600px 100%',
+    animation: 'dashboard_shimmer 1.25s linear infinite',
   },
   emptyText: {
     fontSize: '0.875rem',
