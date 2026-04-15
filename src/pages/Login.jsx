@@ -123,7 +123,7 @@ const Login = () => {
               ...(loading ? styles.buttonDisabled : {}),
             }}
           >
-            {loading ? 'Entrando...' : 'Entrar'}
+            {loading ? 'Verificando...' : 'Entrar'}
           </button>
 
           <div style={styles.footer}>
