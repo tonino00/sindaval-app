@@ -220,12 +220,22 @@ const Profile = () => {
               <div style={styles.photoPreview}>
                 {photoPreview ? (
                   <img src={photoPreview} alt="Preview" style={styles.photoImage} />
-                ) : user?.fotoUrl ? (
-                  <img src={user.fotoUrl} alt={user.nomeCompleto} style={styles.photoImage} />
                 ) : (
-                  <div style={styles.photoPlaceholder}>
-                    {user?.nomeCompleto?.charAt(0).toUpperCase()}
-                  </div>
+                  <>
+                    <div style={styles.photoPlaceholder}>
+                      {user?.nomeCompleto?.charAt(0).toUpperCase()}
+                    </div>
+                    {user?.fotoUrl && (
+                      <img
+                        src={user.fotoUrl}
+                        alt={user.nomeCompleto}
+                        style={styles.photoImage}
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    )}
+                  </>
                 )}
               </div>
               <div style={styles.photoActions}>

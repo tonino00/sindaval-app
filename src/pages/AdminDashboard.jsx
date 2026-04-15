@@ -1,10 +1,17 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
+import logoSindav from '../assets/logo-sindav.png';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [monthlyData, setMonthlyData] = useState([]);
+  const spinnerCss = `
+    @keyframes adminDashboard_spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  `;
 
   useEffect(() => {
     fetchStats();
@@ -32,7 +39,14 @@ const AdminDashboard = () => {
   if (loading) {
     return (
       <div style={styles.container}>
-        <p>Carregando estatísticas...</p>
+        <style>{spinnerCss}</style>
+        <div style={styles.loadingContainer} aria-busy="true" aria-live="polite">
+          <div style={styles.spinnerRing}>
+            <div style={styles.spinnerRingInner} />
+          </div>
+          <img src={logoSindav} alt="SINDAVAL" style={styles.loadingLogo} />
+          <div style={styles.loadingText}>Carregando estatísticas...</div>
+        </div>
       </div>
     );
   }
@@ -202,6 +216,43 @@ const styles = {
   container: {
     maxWidth: '1400px',
     margin: '0 auto',
+  },
+  loadingContainer: {
+    minHeight: '70vh',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '1rem',
+    position: 'relative',
+  },
+  spinnerRing: {
+    position: 'absolute',
+    width: '220px',
+    height: '220px',
+    borderRadius: '9999px',
+    background: 'conic-gradient(from 0deg, rgba(26, 54, 93, 0.0), rgba(26, 54, 93, 0.95))',
+    animation: 'adminDashboard_spin 1s linear infinite',
+    filter: 'drop-shadow(0 6px 18px rgba(0,0,0,0.12))',
+  },
+  spinnerRingInner: {
+    position: 'absolute',
+    inset: '12px',
+    borderRadius: '9999px',
+    backgroundColor: '#ffffff',
+    border: '1px solid #e5e7eb',
+  },
+  loadingLogo: {
+    width: '160px',
+    height: 'auto',
+    objectFit: 'contain',
+    zIndex: 1,
+  },
+  loadingText: {
+    zIndex: 1,
+    color: '#6b7280',
+    fontWeight: '700',
+    fontSize: '0.95rem',
   },
   header: {
     display: 'flex',

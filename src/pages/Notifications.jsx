@@ -8,6 +8,12 @@ const Notifications = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const shimmerCss = `
+    @keyframes notifications_shimmer {
+      0% { background-position: -600px 0; }
+      100% { background-position: 600px 0; }
+    }
+  `;
   const [currentPage, setCurrentPage] = useState(1);
   const [filter, setFilter] = useState('TODAS');
   const itemsPerPage = 5;
@@ -73,7 +79,74 @@ const Notifications = () => {
   if (loading) {
     return (
       <div style={styles.container}>
-        <p>Carregando notificações...</p>
+        <style>{shimmerCss}</style>
+        <div style={styles.header}>
+          <div>
+            <h1 style={styles.title}>Notificações</h1>
+            <p style={styles.subtitle}>Acompanhe todas as suas notificações</p>
+          </div>
+          {unreadCount > 0 && (
+            <span style={styles.badge}>{unreadCount} não lida{unreadCount > 1 ? 's' : ''}</span>
+          )}
+        </div>
+
+        <div style={styles.filterCard}>
+          <div style={styles.filterHeader}>
+            <div style={styles.filterIcon}>🔍</div>
+            <h3 style={styles.filterTitle}>Filtrar Notificações</h3>
+          </div>
+          <div style={styles.filterContent}>
+            <div style={styles.filterRow}>
+              <div style={styles.filterGroup}>
+                <label style={styles.filterLabel}>Status</label>
+                <select value={filter} onChange={(e) => setFilter(e.target.value)} style={styles.filterSelect} disabled>
+                  <option value="TODAS">📋 Todas</option>
+                  <option value="NAO_LIDAS">🔔 Não Lidas</option>
+                  <option value="LIDAS">✅ Lidas</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style={styles.skeletonList}>
+          <div style={styles.skeletonCard}>
+            <div style={styles.skeletonRow}>
+              <div style={{ ...styles.skeletonLine, width: '60%' }} />
+              <div style={{ ...styles.skeletonPill, width: '120px' }} />
+            </div>
+            <div style={{ ...styles.skeletonLine, width: '92%' }} />
+            <div style={{ ...styles.skeletonLine, width: '84%' }} />
+            <div style={styles.skeletonFooter}>
+              <div style={{ ...styles.skeletonLine, width: '160px' }} />
+              <div style={{ ...styles.skeletonPill, width: '140px' }} />
+            </div>
+          </div>
+          <div style={styles.skeletonCard}>
+            <div style={styles.skeletonRow}>
+              <div style={{ ...styles.skeletonLine, width: '55%' }} />
+              <div style={{ ...styles.skeletonPill, width: '110px' }} />
+            </div>
+            <div style={{ ...styles.skeletonLine, width: '90%' }} />
+            <div style={{ ...styles.skeletonLine, width: '78%' }} />
+            <div style={styles.skeletonFooter}>
+              <div style={{ ...styles.skeletonLine, width: '150px' }} />
+              <div style={{ ...styles.skeletonPill, width: '140px' }} />
+            </div>
+          </div>
+          <div style={styles.skeletonCard}>
+            <div style={styles.skeletonRow}>
+              <div style={{ ...styles.skeletonLine, width: '62%' }} />
+              <div style={{ ...styles.skeletonPill, width: '130px' }} />
+            </div>
+            <div style={{ ...styles.skeletonLine, width: '94%' }} />
+            <div style={{ ...styles.skeletonLine, width: '80%' }} />
+            <div style={styles.skeletonFooter}>
+              <div style={{ ...styles.skeletonLine, width: '170px' }} />
+              <div style={{ ...styles.skeletonPill, width: '140px' }} />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -248,6 +321,57 @@ const styles = {
     maxWidth: '900px',
     margin: '0 auto',
     padding: '0 1rem',
+  },
+  skeletonHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '2rem',
+    gap: '1rem',
+    paddingTop: '0.25rem',
+  },
+  skeletonList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem',
+  },
+  skeletonCard: {
+    backgroundColor: '#ffffff',
+    padding: '1.25rem',
+    borderRadius: '0.75rem',
+    border: '2px solid #e5e7eb',
+    boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.75rem',
+  },
+  skeletonRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '1rem',
+  },
+  skeletonFooter: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '1rem',
+    paddingTop: '0.5rem',
+  },
+  skeletonLine: {
+    height: '12px',
+    borderRadius: '999px',
+    backgroundImage: 'linear-gradient(90deg, #e5e7eb 0%, #f3f4f6 40%, #e5e7eb 80%)',
+    backgroundSize: '600px 100%',
+    animation: 'notifications_shimmer 1.25s linear infinite',
+  },
+  skeletonPill: {
+    height: '22px',
+    borderRadius: '999px',
+    backgroundImage: 'linear-gradient(90deg, #e5e7eb 0%, #f3f4f6 40%, #e5e7eb 80%)',
+    backgroundSize: '600px 100%',
+    animation: 'notifications_shimmer 1.25s linear infinite',
+    flexShrink: 0,
   },
   header: {
     display: 'flex',

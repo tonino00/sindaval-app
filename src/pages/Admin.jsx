@@ -28,6 +28,12 @@ const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const shimmerCss = `
+    @keyframes admin_shimmer {
+      0% { background-position: -600px 0; }
+      100% { background-position: 600px 0; }
+    }
+  `;
   const [errorNotification, setErrorNotification] = useState(null);
   const [successNotification, setSuccessNotification] = useState(null);
   const [photoFile, setPhotoFile] = useState(null);
@@ -272,6 +278,7 @@ const Admin = () => {
 
   return (
     <div style={styles.container}>
+      <style>{shimmerCss}</style>
       <div style={styles.header}>
         <div>
           <h1 style={styles.title}>Gestão Administrativa</h1>
@@ -533,8 +540,21 @@ const Admin = () => {
 
         {loading ? (
           <div style={styles.loadingState}>
-            <div style={styles.loadingSpinner}>⏳</div>
-            <p style={styles.loadingText}>Carregando usuários...</p>
+            <div style={styles.skeletonStack}>
+              <div style={styles.skeletonRow}>
+                <div style={{ ...styles.skeletonLine, width: '55%' }} />
+                <div style={{ ...styles.skeletonLine, width: '25%' }} />
+              </div>
+              <div style={styles.skeletonRow}>
+                <div style={{ ...styles.skeletonLine, width: '62%' }} />
+                <div style={{ ...styles.skeletonLine, width: '20%' }} />
+              </div>
+              <div style={styles.skeletonRow}>
+                <div style={{ ...styles.skeletonLine, width: '48%' }} />
+                <div style={{ ...styles.skeletonLine, width: '30%' }} />
+              </div>
+              <div style={styles.skeletonBlock} />
+            </div>
           </div>
         ) : filteredUsers.length === 0 ? (
           <div style={styles.emptyState}>
@@ -565,15 +585,19 @@ const Admin = () => {
                   }}>
                     <td style={styles.tableCell}>
                       <div style={styles.userCell}>
-                        {user.fotoUrl ? (
-                          <img 
-                            src={user.fotoUrl} 
-                            alt={user.nomeCompleto}
-                            style={styles.userAvatarImage}
-                          />
-                        ) : (
+                        <div style={styles.userAvatarWrap}>
                           <div style={styles.userAvatar}>{user.nomeCompleto.charAt(0).toUpperCase()}</div>
-                        )}
+                          {user.fotoUrl && (
+                            <img
+                              src={user.fotoUrl}
+                              alt={user.nomeCompleto}
+                              style={styles.userAvatarImage}
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          )}
+                        </div>
                         <span style={styles.userName}>{user.nomeCompleto}</span>
                       </div>
                     </td>
@@ -649,8 +673,21 @@ const Admin = () => {
         </div>
         {loadingNotifications ? (
           <div style={styles.loadingState}>
-            <div style={styles.loadingSpinner}>⏳</div>
-            <p style={styles.loadingText}>Carregando notificações...</p>
+            <div style={styles.skeletonStack}>
+              <div style={styles.skeletonRow}>
+                <div style={{ ...styles.skeletonLine, width: '60%' }} />
+                <div style={{ ...styles.skeletonLine, width: '22%' }} />
+              </div>
+              <div style={styles.skeletonRow}>
+                <div style={{ ...styles.skeletonLine, width: '54%' }} />
+                <div style={{ ...styles.skeletonLine, width: '28%' }} />
+              </div>
+              <div style={styles.skeletonRow}>
+                <div style={{ ...styles.skeletonLine, width: '58%' }} />
+                <div style={{ ...styles.skeletonLine, width: '24%' }} />
+              </div>
+              <div style={styles.skeletonBlock} />
+            </div>
           </div>
         ) : notifications.length === 0 ? (
           <div style={styles.emptyState}>
@@ -914,6 +951,32 @@ const styles = {
     color: '#6b7280',
     fontWeight: '500',
   },
+  skeletonStack: {
+    width: '100%',
+    maxWidth: '720px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.85rem',
+  },
+  skeletonRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: '1rem',
+  },
+  skeletonLine: {
+    height: '14px',
+    borderRadius: '999px',
+    backgroundImage: 'linear-gradient(90deg, #e5e7eb 0%, #f3f4f6 40%, #e5e7eb 80%)',
+    backgroundSize: '600px 100%',
+    animation: 'admin_shimmer 1.25s linear infinite',
+  },
+  skeletonBlock: {
+    height: '180px',
+    borderRadius: '0.75rem',
+    backgroundImage: 'linear-gradient(90deg, #e5e7eb 0%, #f3f4f6 40%, #e5e7eb 80%)',
+    backgroundSize: '600px 100%',
+    animation: 'admin_shimmer 1.25s linear infinite',
+  },
   emptyState: {
     display: 'flex',
     flexDirection: 'column',
@@ -966,6 +1029,12 @@ const styles = {
     alignItems: 'center',
     gap: '0.75rem',
   },
+  userAvatarWrap: {
+    position: 'relative',
+    width: '2.5rem',
+    height: '2.5rem',
+    flexShrink: 0,
+  },
   userAvatar: {
     width: '2.5rem',
     height: '2.5rem',
@@ -980,12 +1049,13 @@ const styles = {
     flexShrink: 0,
   },
   userAvatarImage: {
+    position: 'absolute',
+    inset: 0,
     width: '2.5rem',
     height: '2.5rem',
     borderRadius: '50%',
     objectFit: 'cover',
     border: '2px solid #e5e7eb',
-    flexShrink: 0,
   },
   userName: {
     fontWeight: '600',

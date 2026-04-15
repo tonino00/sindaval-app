@@ -39,17 +39,21 @@ const Sidebar = ({ isOpen = false, onClose = () => {} }) => {
       }}
     >
       <div style={styles.userSection}>
-        {user?.fotoUrl ? (
-          <img 
-            src={user.fotoUrl} 
-            alt={user.nomeCompleto}
-            style={styles.userAvatarImage}
-          />
-        ) : (
+        <div style={styles.userAvatarWrap}>
           <div style={styles.userAvatar}>
             {user?.nomeCompleto?.charAt(0).toUpperCase()}
           </div>
-        )}
+          {user?.fotoUrl && (
+            <img
+              src={user.fotoUrl}
+              alt={user.nomeCompleto}
+              style={styles.userAvatarImage}
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          )}
+        </div>
         <div style={styles.userInfo}>
           <span style={styles.userName}>{user?.nomeCompleto}</span>
           <span style={styles.userRole}>
@@ -107,6 +111,11 @@ const styles = {
     gap: '0.75rem',
     alignItems: 'center',
   },
+  userAvatarWrap: {
+    position: 'relative',
+    width: '3.5rem',
+    height: '3.5rem',
+  },
   userAvatar: {
     width: '3.5rem',
     height: '3.5rem',
@@ -120,6 +129,8 @@ const styles = {
     fontWeight: '700',
   },
   userAvatarImage: {
+    position: 'absolute',
+    inset: 0,
     width: '3.5rem',
     height: '3.5rem',
     borderRadius: '50%',

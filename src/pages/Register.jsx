@@ -82,6 +82,9 @@ const Register = () => {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(registerSchema),
+    defaultValues: {
+      numeroOAB: 'AL ',
+    },
   });
 
   const handlePhotoChange = (e) => {
@@ -278,14 +281,19 @@ const Register = () => {
             <label style={styles.label}>Número da OAB</label>
             <Controller
               name="numeroOAB"
+              defaultValue="AL "
               control={control}
               render={({ field }) => (
                 <InputMask
                   mask="aa 999999"
                   value={field.value}
+                  onFocus={() => {
+                    if (!field.value) field.onChange('AL ');
+                  }}
                   onChange={(e) => {
-                    const value = e.target.value.toUpperCase();
-                    field.onChange(value);
+                    const raw = String(e.target.value || '').toUpperCase();
+                    const digits = raw.replace(/\D/g, '');
+                    field.onChange(`AL ${digits}`);
                   }}
                   disabled={loading}
                   formatChars={{
