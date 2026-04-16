@@ -1,6 +1,6 @@
 import { useSelector } from 'react-redux';
 import { Navigate } from 'react-router-dom';
-import logoSindav from '../assets/logo-sindav.png';
+import logoSindav from '../assets/logo-main.png';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading, initialized } = useSelector((state) => state.auth);
@@ -45,8 +45,8 @@ const styles = {
   },
   loaderWrap: {
     position: 'relative',
-    width: '240px',
-    height: '240px',
+    width: '200px',
+    height: '200px',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
@@ -73,12 +73,15 @@ const styles = {
     height: 'auto',
     objectFit: 'contain',
     zIndex: 1,
+    marginTop:'2.5rem'
   },
   loadingText: {
     zIndex: 1,
     color: '#6b7280',
     fontWeight: '700',
     fontSize: '0.95rem',
+    position:'relative',
+    top:'1rem'
   },
 };
 
