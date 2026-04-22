@@ -221,6 +221,23 @@ const Admin = () => {
     });
   };
 
+  const handleChangeStatus = (userId, newStatus) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Alterar Status',
+      message: `Tem certeza que deseja alterar o status para ${newStatus}?`,
+      onConfirm: async () => {
+        try {
+          await api.patch(`/users/${userId}`, { status: newStatus });
+          setSuccess(`Status alterado para ${newStatus} com sucesso!`);
+          await fetchUsers();
+        } catch (err) {
+          setError('Erro ao alterar status');
+        }
+      },
+    });
+  };
+
   const fetchNotifications = async () => {
     try {
       setLoadingNotifications(true);
@@ -573,7 +590,6 @@ const Admin = () => {
                   <th style={styles.tableHeaderCell}>Perfil</th>
                   <th style={styles.tableHeaderCell}>Status</th>
                   <th style={styles.tableHeaderCell}>Data Cadastro</th>
-                  <th style={styles.tableHeaderCell}>Bloqueio</th>
                   <th style={styles.tableHeaderCell}>Ações</th>
                 </tr>
               </thead>
@@ -616,31 +632,23 @@ const Admin = () => {
                       </select>
                     </td>
                     <td style={styles.tableCell}>
-                      <button
-                        onClick={() => handleToggleStatus(user.id, user.status)}
+                      <select
+                        value={user.status}
+                        onChange={(e) => handleChangeStatus(user.id, e.target.value)}
                         style={{
-                          ...styles.statusButton,
-                          ...(user.status === 'ATIVO' ? styles.statusButtonActive : {}),
-                          ...(user.status === 'INADIMPLENTE' ? styles.statusButtonWarning : {}),
-                          ...(user.status === 'INATIVO' ? styles.statusButtonInactive : {}),
+                          ...styles.statusSelect,
+                          ...(user.status === 'ATIVO' ? styles.statusSelectActive : {}),
+                          ...(user.status === 'INADIMPLENTE' ? styles.statusSelectWarning : {}),
+                          ...(user.status === 'INATIVO' ? styles.statusSelectInactive : {}),
                         }}
                       >
-                        {user.status}
-                      </button>
+                        <option value="ATIVO">ATIVO</option>
+                        <option value="INATIVO">INATIVO</option>
+                        <option value="INADIMPLENTE">INADIMPLENTE</option>
+                      </select>
                     </td>
                     <td style={styles.tableCell}>
                       {user.createdAt ? new Date(user.createdAt).toLocaleDateString('pt-BR') : 'N/A'}
-                    </td>
-                    <td style={styles.tableCell}>
-                      <button
-                        onClick={() => handleBlockUser(user.id, user.bloqueado)}
-                        style={{
-                          ...styles.blockButton,
-                          ...(user.bloqueado ? styles.blockButtonBlocked : styles.blockButtonActive),
-                        }}
-                      >
-                        {user.bloqueado ? '🔓 Desbloquear' : '🔒 Bloquear'}
-                      </button>
                     </td>
                     <td style={styles.tableCell}>
                       <button
@@ -1122,6 +1130,33 @@ const styles = {
     backgroundColor: '#ffffff',
     cursor: 'pointer',
     color: '#1a365d',
+  },
+  statusSelect: {
+    padding: '0.5rem 0.75rem',
+    border: '1px solid #d1d5db',
+    borderRadius: '0.375rem',
+    fontSize: '0.8125rem',
+    fontWeight: '700',
+    outline: 'none',
+    backgroundColor: '#ffffff',
+    cursor: 'pointer',
+    color: '#1a365d',
+    minWidth: '140px',
+  },
+  statusSelectActive: {
+    borderColor: '#10b981',
+    backgroundColor: '#ecfdf5',
+    color: '#065f46',
+  },
+  statusSelectWarning: {
+    borderColor: '#f59e0b',
+    backgroundColor: '#fffbeb',
+    color: '#92400e',
+  },
+  statusSelectInactive: {
+    borderColor: '#ef4444',
+    backgroundColor: '#fef2f2',
+    color: '#991b1b',
   },
   statusButton: {
     padding: '0.5rem 1rem',

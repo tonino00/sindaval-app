@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
-import logoSindav from '../assets/logo-sindav.png';
+import logoSindav from '../assets/logo-main.png';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState(null);
@@ -45,7 +45,7 @@ const AdminDashboard = () => {
             <div style={styles.spinnerRingInner} />
           </div>
           <img src={logoSindav} alt="SINDAVAL" style={styles.loadingLogo} />
-          <div style={styles.loadingText}>Carregando estatísticas...</div>
+          <div style={styles.loadingText}>Carregando...</div>
         </div>
       </div>
     );
@@ -247,12 +247,15 @@ const styles = {
     height: 'auto',
     objectFit: 'contain',
     zIndex: 1,
+    marginTop:'2.5rem'
   },
   loadingText: {
     zIndex: 1,
     color: '#6b7280',
     fontWeight: '700',
     fontSize: '0.95rem',
+    position:'relative',
+    top:'1rem'
   },
   header: {
     display: 'flex',
