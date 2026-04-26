@@ -50,10 +50,19 @@ const Reports = () => {
   const fetchPreviewData = async () => {
     try {
       setLoadingPreview(true);
+      if (filters.tipo === 'convenios') {
+        const response = await api.get('/agreements');
+        setPreviewData((prev) => ({
+          ...prev,
+          [filters.tipo]: { agreements: response.data || [] },
+        }));
+        return;
+      }
+
       const response = await api.get(`/admin/reports/preview?tipo=${filters.tipo}`);
-      setPreviewData(prev => ({
+      setPreviewData((prev) => ({
         ...prev,
-        [filters.tipo]: response.data
+        [filters.tipo]: response.data,
       }));
     } catch (err) {
       console.error('Erro ao carregar preview:', err);
@@ -82,6 +91,12 @@ const Reports = () => {
     return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 
+  const formatPercentBR = (value) => {
+    const num = Number(value);
+    if (Number.isNaN(num)) return String(value ?? '');
+    return `${num.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`;
+  };
+
   const formatDateBR = (isoDate) => {
     if (!isoDate) return '';
     const [year, month, day] = isoDate.split('-');
@@ -97,6 +112,17 @@ const Reports = () => {
   };
 
   const getResumo = (dados) => {
+    if (dados?.agreements && Array.isArray(dados.agreements)) {
+      const descontos = dados.agreements
+        .map((a) => Number(a?.desconto))
+        .filter((n) => !Number.isNaN(n));
+      const totalRegistros = dados.agreements.length;
+      const descontoMedio = descontos.length
+        ? descontos.reduce((acc, v) => acc + v, 0) / descontos.length
+        : 0;
+      return { totalRegistros, somaValores: descontoMedio };
+    }
+
     const values = Object.values(dados || {}).map((v) => Number(v) || 0);
     const totalRegistros = values.reduce((acc, v) => acc + v, 0);
     const somaValores = values.reduce((acc, v) => acc + v, 0);
@@ -120,19 +146,43 @@ const Reports = () => {
       return 'Todo o período';
     })();
 
-    const entries = Object.entries(dados || {});
     const resumo = getResumo(dados);
 
-    const body = [
-      [
-        { text: 'Métrica', style: 'tableHeader' },
-        { text: 'Valor', style: 'tableHeader', alignment: 'right' },
-      ],
-      ...entries.map(([k, v], idx) => [
-        { text: formatPreviewLabel(k), fillColor: idx % 2 === 0 ? colors.zebra : '#ffffff' },
-        { text: formatNumberBR(v), alignment: 'right', fillColor: idx % 2 === 0 ? colors.zebra : '#ffffff' },
-      ]),
-    ];
+    const isConvenios = tipo === 'convenios' && Array.isArray(dados?.agreements);
+    const isNotificacoes = tipo === 'notificacoes';
+    const entries = isConvenios ? [] : Object.entries(dados || {});
+
+    const body = isConvenios
+      ? [
+          [
+            { text: 'Convênio', style: 'tableHeader' },
+            { text: 'Desconto', style: 'tableHeader', alignment: 'right' },
+            { text: 'Status', style: 'tableHeader', alignment: 'right' },
+          ],
+          ...(dados.agreements || []).map((agreement, idx) => [
+            { text: agreement?.titulo || '-', fillColor: idx % 2 === 0 ? colors.zebra : '#ffffff' },
+            {
+              text: formatPercentBR(agreement?.desconto ?? 0),
+              alignment: 'right',
+              fillColor: idx % 2 === 0 ? colors.zebra : '#ffffff',
+            },
+            {
+              text: agreement?.ativo ? 'Ativo' : 'Inativo',
+              alignment: 'right',
+              fillColor: idx % 2 === 0 ? colors.zebra : '#ffffff',
+            },
+          ]),
+        ]
+      : [
+          [
+            { text: 'Métrica', style: 'tableHeader' },
+            { text: 'Valor', style: 'tableHeader', alignment: 'right' },
+          ],
+          ...entries.map(([k, v], idx) => [
+            { text: formatPreviewLabel(k), fillColor: idx % 2 === 0 ? colors.zebra : '#ffffff' },
+            { text: formatNumberBR(v), alignment: 'right', fillColor: idx % 2 === 0 ? colors.zebra : '#ffffff' },
+          ]),
+        ];
 
     const docDefinition = {
       pageSize: 'A4',
@@ -171,21 +221,30 @@ const Reports = () => {
         {
           columns: [
             {
-              width: '*',
+              width: isNotificacoes ? '*' : '*',
               stack: [
                 { text: 'Total de registros', style: 'metricLabel' },
                 { text: formatNumberBR(resumo.totalRegistros), style: 'metricValue' },
               ],
               style: 'metricCard',
             },
-            {
-              width: '*',
-              stack: [
-                { text: 'Soma (indicativa)', style: 'metricLabel' },
-                { text: formatCurrencyBR(resumo.somaValores), style: 'metricValue' },
-              ],
-              style: 'metricCard',
-            },
+            ...(!isNotificacoes
+              ? [
+                  {
+                    width: '*',
+                    stack: [
+                      { text: isConvenios ? 'Desconto médio (indicativo)' : 'Soma (indicativa)', style: 'metricLabel' },
+                      {
+                        text: isConvenios
+                          ? formatPercentBR(resumo.somaValores)
+                          : formatCurrencyBR(resumo.somaValores),
+                        style: 'metricValue',
+                      },
+                    ],
+                    style: 'metricCard',
+                  },
+                ]
+              : []),
           ],
           columnGap: 12,
           margin: [0, 0, 0, 16],
@@ -198,7 +257,7 @@ const Reports = () => {
         {
           table: {
             headerRows: 1,
-            widths: ['*', 120],
+            widths: isConvenios ? ['*', 80, 60] : ['*', 120],
             body,
           },
           layout: {
@@ -280,8 +339,13 @@ const Reports = () => {
 
     try {
       if (filters.formato === 'pdf') {
-        const response = await api.get(`/admin/reports/preview?tipo=${filters.tipo}`);
-        gerarPDFProfissional(response.data, filters.tipo, filters);
+        if (filters.tipo === 'convenios') {
+          const response = await api.get('/agreements');
+          gerarPDFProfissional({ agreements: response.data || [] }, filters.tipo, filters);
+        } else {
+          const response = await api.get(`/admin/reports/preview?tipo=${filters.tipo}`);
+          gerarPDFProfissional(response.data, filters.tipo, filters);
+        }
         setSuccess('PDF gerado com sucesso!');
       } else {
         const response = await api.post('/admin/reports/export', filters, {
@@ -317,13 +381,25 @@ const Reports = () => {
 
   const preview = getCurrentPreview();
 
+  const previewAgreements = useMemo(() => {
+    if (filters.tipo !== 'convenios') return [];
+    return Array.isArray(preview?.agreements) ? preview.agreements : [];
+  }, [filters.tipo, preview]);
+
   const chartData = useMemo(() => {
+    if (filters.tipo === 'convenios') {
+      return (previewAgreements || []).slice(0, 12).map((agreement) => ({
+        name: agreement?.titulo || '-',
+        value: Number(agreement?.desconto) || 0,
+      }));
+    }
+
     const entries = Object.entries(preview || {});
     return entries.map(([key, value]) => ({
       name: formatPreviewLabel(key),
       value: Number(value) || 0,
     }));
-  }, [preview]);
+  }, [filters.tipo, preview, previewAgreements]);
 
   const getTipoLabel = (tipo) => {
     if (tipo === 'usuarios') return 'Usuários';
@@ -389,14 +465,38 @@ const Reports = () => {
             </div>
           ) : Object.keys(preview).length > 0 ? (
             <>
-              <div style={styles.previewStats}>
-                {Object.entries(preview).map(([key, value]) => (
-                  <div key={key} style={styles.previewStat}>
-                    <span style={styles.previewLabel}>{key.charAt(0).toUpperCase() + key.slice(1)}</span>
-                    <span style={styles.previewValue}>{value || 0}</span>
+              {filters.tipo === 'convenios' ? (
+                <div style={styles.previewStats}>
+                  <div style={styles.previewStat}>
+                    <span style={styles.previewLabel}>Total de convênios</span>
+                    <span style={styles.previewValue}>{previewAgreements.length}</span>
                   </div>
-                ))}
-              </div>
+                  <div style={styles.previewStat}>
+                    <span style={styles.previewLabel}>Desconto médio (indicativo)</span>
+                    <span style={styles.previewValue}>
+                      {formatPercentBR(getResumo({ agreements: previewAgreements }).somaValores)}
+                    </span>
+                  </div>
+                </div>
+              ) : filters.tipo === 'notificacoes' ? (
+                <div style={styles.previewStats}>
+                  <div style={styles.previewStat}>
+                    <span style={styles.previewLabel}>Total de registros</span>
+                    <span style={styles.previewValue}>
+                      {formatNumberBR(getResumo(preview).totalRegistros)}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div style={styles.previewStats}>
+                  {Object.entries(preview).map(([key, value]) => (
+                    <div key={key} style={styles.previewStat}>
+                      <span style={styles.previewLabel}>{key.charAt(0).toUpperCase() + key.slice(1)}</span>
+                      <span style={styles.previewValue}>{value || 0}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
               
               <div style={styles.chartPreview}>
                 <div style={styles.rechartsContainer}>
@@ -406,7 +506,7 @@ const Reports = () => {
                       <XAxis dataKey="name" angle={-20} textAnchor="end" interval={0} height={60} />
                       <YAxis />
                       <Tooltip
-                        formatter={(value) => formatNumberBR(value)}
+                        formatter={(value) => (filters.tipo === 'convenios' ? formatPercentBR(value) : formatNumberBR(value))}
                         labelStyle={{ fontWeight: 700 }}
                       />
                       <Bar dataKey="value" fill="#1a365d" radius={[6, 6, 0, 0]} />
@@ -414,6 +514,23 @@ const Reports = () => {
                   </ResponsiveContainer>
                 </div>
               </div>
+
+              {filters.tipo === 'convenios' && (
+                <div style={styles.agreementsTableWrapper}>
+                  <div style={styles.agreementsTableHeader}>
+                    <div style={styles.agreementsColTitle}>Convênio</div>
+                    <div style={styles.agreementsColDiscount}>Desconto</div>
+                  </div>
+                  <div style={styles.agreementsTableBody}>
+                    {previewAgreements.map((agreement) => (
+                      <div key={agreement?.id ?? agreement?.titulo} style={styles.agreementsRow}>
+                        <div style={styles.agreementsColTitle}>{agreement?.titulo || '-'}</div>
+                        <div style={styles.agreementsColDiscount}>{formatPercentBR(agreement?.desconto ?? 0)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </>
           ) : (
             <div style={styles.emptyPreview}>
@@ -659,6 +776,50 @@ const styles = {
     backgroundColor: '#f9fafb',
     borderRadius: '0.75rem',
     border: '1px solid #e5e7eb',
+  },
+  agreementsTableWrapper: {
+    marginTop: '1.5rem',
+    borderRadius: '0.75rem',
+    border: '1px solid #e5e7eb',
+    overflow: 'hidden',
+  },
+  agreementsTableHeader: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 120px',
+    gap: '0.75rem',
+    padding: '0.875rem 1rem',
+    backgroundColor: '#1a365d',
+    color: '#ffffff',
+    fontWeight: '700',
+    fontSize: '0.875rem',
+  },
+  agreementsTableBody: {
+    maxHeight: '260px',
+    overflowY: 'auto',
+    backgroundColor: '#ffffff',
+  },
+  agreementsRow: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 120px',
+    gap: '0.75rem',
+    padding: '0.75rem 1rem',
+    borderBottom: '1px solid #f3f4f6',
+    alignItems: 'center',
+  },
+  agreementsColTitle: {
+    fontSize: '0.9375rem',
+    fontWeight: '600',
+    color: '#111827',
+    minWidth: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  agreementsColDiscount: {
+    fontSize: '0.9375rem',
+    fontWeight: '800',
+    color: '#1a365d',
+    textAlign: 'right',
   },
   miniBarChart: {
     display: 'flex',
