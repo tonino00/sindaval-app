@@ -75,6 +75,59 @@ const Admin = () => {
   const canalNotificacao = watchNotification('canal');
   const [destinatarioEmail, setDestinatarioEmail] = useState('');
   const [destinatariosInternos, setDestinatariosInternos] = useState([]);
+  const [destinatariosEmailGerais, setDestinatariosEmailGerais] = useState([]);
+  const [buscaDestinatariosEmailGerais, setBuscaDestinatariosEmailGerais] = useState('');
+  const [buscaDestinatariosInternos, setBuscaDestinatariosInternos] = useState('');
+
+  const toggleDestinatarioEmailGeral = (email) => {
+    setDestinatariosEmailGerais((prev) => {
+      if (prev.includes(email)) {
+        return prev.filter((e) => e !== email);
+      }
+      return [...prev, email];
+    });
+  };
+
+  const clearDestinatariosEmailGerais = () => {
+    setDestinatariosEmailGerais([]);
+  };
+
+  const selectDestinatariosEmailGerais = (emails) => {
+    setDestinatariosEmailGerais((prev) => {
+      const set = new Set(prev);
+      emails.forEach((e) => set.add(e));
+      return Array.from(set);
+    });
+  };
+
+  const removeDestinatarioEmailGeral = (email) => {
+    setDestinatariosEmailGerais((prev) => prev.filter((e) => e !== email));
+  };
+
+  const toggleDestinatarioInterno = (userId) => {
+    setDestinatariosInternos((prev) => {
+      if (prev.includes(userId)) {
+        return prev.filter((id) => id !== userId);
+      }
+      return [...prev, userId];
+    });
+  };
+
+  const clearDestinatariosInternos = () => {
+    setDestinatariosInternos([]);
+  };
+
+  const selectDestinatariosInternos = (ids) => {
+    setDestinatariosInternos((prev) => {
+      const set = new Set(prev);
+      ids.forEach((id) => set.add(id));
+      return Array.from(set);
+    });
+  };
+
+  const removeDestinatarioInterno = (userId) => {
+    setDestinatariosInternos((prev) => prev.filter((id) => id !== userId));
+  };
 
   useEffect(() => {
     fetchUsers();
@@ -110,6 +163,26 @@ const Admin = () => {
           ...payloadBase,
           destinatario: destinatarioEmail,
         });
+      } else if (data.tipo === 'GERAL' && data.canal === 'EMAIL') {
+        if (!destinatariosEmailGerais.length) {
+          setErrorNotification('Selecione pelo menos um usuário para enviar a notificação por email.');
+          return;
+        }
+
+        const payloadEmailIndividual = {
+          ...payloadBase,
+          tipo: 'INDIVIDUAL',
+          canal: 'EMAIL',
+        };
+
+        await Promise.all(
+          destinatariosEmailGerais.map((email) =>
+            api.post('/notifications', {
+              ...payloadEmailIndividual,
+              destinatario: email,
+            })
+          )
+        );
       } else if (data.tipo === 'INDIVIDUAL' && data.canal === 'INTERNA') {
         if (!destinatariosInternos.length) {
           setErrorNotification('Selecione pelo menos um usuário para enviar a notificação interna.');
@@ -132,6 +205,9 @@ const Admin = () => {
       resetNotification();
       setDestinatarioEmail('');
       setDestinatariosInternos([]);
+      setDestinatariosEmailGerais([]);
+      setBuscaDestinatariosEmailGerais('');
+      setBuscaDestinatariosInternos('');
     } catch (err) {
       setErrorNotification(err.response?.data?.message || 'Erro ao enviar notificação');
     }
@@ -313,6 +389,40 @@ const Admin = () => {
     return matchesSearch && matchesStatus;
   });
 
+  const filteredUsersEmailGerais = users
+    .filter((u) => {
+      const term = buscaDestinatariosEmailGerais.trim().toLowerCase();
+      if (!term) return true;
+      return (
+        (u.nomeCompleto || '').toLowerCase().includes(term) ||
+        (u.email || '').toLowerCase().includes(term)
+      );
+    })
+    .sort((a, b) => {
+      const aSel = destinatariosEmailGerais.includes(a.email);
+      const bSel = destinatariosEmailGerais.includes(b.email);
+      if (aSel && !bSel) return -1;
+      if (!aSel && bSel) return 1;
+      return (a.nomeCompleto || '').localeCompare(b.nomeCompleto || '');
+    });
+
+  const filteredUsersInternos = users
+    .filter((u) => {
+      const term = buscaDestinatariosInternos.trim().toLowerCase();
+      if (!term) return true;
+      return (
+        (u.nomeCompleto || '').toLowerCase().includes(term) ||
+        (u.email || '').toLowerCase().includes(term)
+      );
+    })
+    .sort((a, b) => {
+      const aSel = destinatariosInternos.includes(String(a.id));
+      const bSel = destinatariosInternos.includes(String(b.id));
+      if (aSel && !bSel) return -1;
+      if (!aSel && bSel) return 1;
+      return (a.nomeCompleto || '').localeCompare(b.nomeCompleto || '');
+    });
+
   return (
     <div style={styles.container}>
       <style>{shimmerCss}</style>
@@ -397,24 +507,326 @@ const Admin = () => {
               </div>
             )}
 
+            {tipoNotificacao === 'GERAL' && canalNotificacao === 'EMAIL' && (
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Destinatários (Email)</label>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    value={buscaDestinatariosEmailGerais}
+                    onChange={(e) => setBuscaDestinatariosEmailGerais(e.target.value)}
+                    style={{ ...styles.input, flex: 1, marginBottom: 0 }}
+                    placeholder="Buscar por nome ou email..."
+                  />
+                  <button
+                    type="button"
+                    onClick={() => selectDestinatariosEmailGerais(filteredUsersEmailGerais.map((u) => u.email))}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      background: 'rgba(255,255,255,0.06)',
+                      color: 'rgba(255,255,255,0.9)',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Selecionar filtrados
+                  </button>
+                  <button
+                    type="button"
+                    onClick={clearDestinatariosEmailGerais}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      background: 'rgba(255,255,255,0.03)',
+                      color: 'rgba(255,255,255,0.85)',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Limpar
+                  </button>
+                </div>
+
+                {destinatariosEmailGerais.length > 0 && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '8px',
+                      marginTop: '10px',
+                      padding: '10px',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'rgba(255,255,255,0.03)',
+                    }}
+                  >
+                    {destinatariosEmailGerais.map((email) => {
+                      const u = users.find((x) => x.email === email);
+                      const label = u ? `${u.nomeCompleto} — ${u.email}` : email;
+                      return (
+                        <div
+                          key={email}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '6px 10px',
+                            borderRadius: '999px',
+                            border: '1px solid rgba(255,255,255,0.12)',
+                            background: 'rgba(0,0,0,0.25)',
+                            color: 'rgba(255,255,255,0.92)',
+                            maxWidth: '100%',
+                          }}
+                        >
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeDestinatarioEmailGeral(email)}
+                            style={{
+                              border: 'none',
+                              background: 'transparent',
+                              color: 'rgba(255,255,255,0.75)',
+                              cursor: 'pointer',
+                              fontWeight: 800,
+                              lineHeight: 1,
+                              padding: 0,
+                            }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div
+                  style={{
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '12px',
+                    padding: '8px',
+                    background: 'rgba(0,0,0,0.2)',
+                    maxHeight: '240px',
+                    overflowY: 'auto',
+                    marginTop: '10px',
+                  }}
+                >
+                  {filteredUsersEmailGerais.map((u) => {
+                    const checked = destinatariosEmailGerais.includes(u.email);
+                    return (
+                      <button
+                        key={u.id}
+                        type="button"
+                        onClick={() => toggleDestinatarioEmailGeral(u.email)}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '12px',
+                          padding: '10px 12px',
+                          borderRadius: '10px',
+                          border: '1px solid rgba(255,255,255,0.06)',
+                          background: checked ? 'rgba(59, 130, 246, 0.18)' : 'transparent',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                        }}
+                      >
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
+                          <span style={{ color: 'rgba(255,255,255,0.92)', fontWeight: 650, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {u.nomeCompleto}
+                          </span>
+                          <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {u.email}
+                          </span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          readOnly
+                          style={{ width: '16px', height: '16px' }}
+                        />
+                      </button>
+                    );
+                  })}
+
+                  {filteredUsersEmailGerais.length === 0 && (
+                    <div style={{ padding: '10px', color: 'rgba(255,255,255,0.7)' }}>
+                      Nenhum usuário encontrado.
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ marginTop: '10px', color: 'rgba(255,255,255,0.75)', fontSize: '13px' }}>
+                  Selecionados: {destinatariosEmailGerais.length}
+                </div>
+              </div>
+            )}
+
             {tipoNotificacao === 'INDIVIDUAL' && canalNotificacao === 'INTERNA' && (
               <div style={styles.formGroup}>
                 <label style={styles.label}>Destinatários</label>
-                <select
-                  multiple
-                  value={destinatariosInternos}
-                  onChange={(e) => {
-                    const values = Array.from(e.target.selectedOptions).map((opt) => opt.value);
-                    setDestinatariosInternos(values);
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    value={buscaDestinatariosInternos}
+                    onChange={(e) => setBuscaDestinatariosInternos(e.target.value)}
+                    style={{ ...styles.input, flex: 1, marginBottom: 0 }}
+                    placeholder="Buscar por nome ou email..."
+                  />
+                  <button
+                    type="button"
+                    onClick={() => selectDestinatariosInternos(filteredUsersInternos.map((u) => String(u.id)))}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      background: 'rgba(255,255,255,0.06)',
+                      color: 'rgba(255,255,255,0.9)',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Selecionar filtrados
+                  </button>
+                  <button
+                    type="button"
+                    onClick={clearDestinatariosInternos}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      background: 'rgba(255,255,255,0.03)',
+                      color: 'rgba(255,255,255,0.85)',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Limpar
+                  </button>
+                </div>
+
+                {destinatariosInternos.length > 0 && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '8px',
+                      marginTop: '10px',
+                      padding: '10px',
+                      borderRadius: '12px',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'rgba(255,255,255,0.03)',
+                    }}
+                  >
+                    {destinatariosInternos.map((userId) => {
+                      const u = users.find((x) => String(x.id) === String(userId));
+                      const label = u ? `${u.nomeCompleto} — ${u.email}` : userId;
+                      return (
+                        <div
+                          key={userId}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '6px 10px',
+                            borderRadius: '999px',
+                            border: '1px solid rgba(255,255,255,0.12)',
+                            background: 'rgba(0,0,0,0.25)',
+                            color: 'rgba(255,255,255,0.92)',
+                            maxWidth: '100%',
+                          }}
+                        >
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeDestinatarioInterno(userId)}
+                            style={{
+                              border: 'none',
+                              background: 'transparent',
+                              color: 'rgba(255,255,255,0.75)',
+                              cursor: 'pointer',
+                              fontWeight: 800,
+                              lineHeight: 1,
+                              padding: 0,
+                            }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div
+                  style={{
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '12px',
+                    padding: '8px',
+                    background: 'rgba(0,0,0,0.2)',
+                    maxHeight: '240px',
+                    overflowY: 'auto',
+                    marginTop: '10px',
                   }}
-                  style={{ ...styles.select, minHeight: '140px' }}
                 >
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.nomeCompleto} — {u.email}
-                    </option>
-                  ))}
-                </select>
+                  {filteredUsersInternos.map((u) => {
+                    const userId = String(u.id);
+                    const checked = destinatariosInternos.includes(userId);
+                    return (
+                      <button
+                        key={u.id}
+                        type="button"
+                        onClick={() => toggleDestinatarioInterno(userId)}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '12px',
+                          padding: '10px 12px',
+                          borderRadius: '10px',
+                          border: '1px solid rgba(255,255,255,0.06)',
+                          background: checked ? 'rgba(59, 130, 246, 0.18)' : 'transparent',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                        }}
+                      >
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
+                          <span style={{ color: 'rgba(255,255,255,0.92)', fontWeight: 650, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {u.nomeCompleto}
+                          </span>
+                          <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {u.email}
+                          </span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          readOnly
+                          style={{ width: '16px', height: '16px' }}
+                        />
+                      </button>
+                    );
+                  })}
+
+                  {filteredUsersInternos.length === 0 && (
+                    <div style={{ padding: '10px', color: 'rgba(255,255,255,0.7)' }}>
+                      Nenhum usuário encontrado.
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ marginTop: '10px', color: 'rgba(255,255,255,0.75)', fontSize: '13px' }}>
+                  Selecionados: {destinatariosInternos.length}
+                </div>
               </div>
             )}
 
