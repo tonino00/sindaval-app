@@ -74,6 +74,7 @@ const Admin = () => {
   const tipoNotificacao = watchNotification('tipo');
   const canalNotificacao = watchNotification('canal');
   const [destinatarioEmail, setDestinatarioEmail] = useState('');
+  const [destinatariosInternos, setDestinatariosInternos] = useState([]);
 
   useEffect(() => {
     fetchUsers();
@@ -97,7 +98,7 @@ const Admin = () => {
     setSuccessNotification(null);
 
     try {
-      const payload = {
+      const payloadBase = {
         titulo: data.titulo,
         mensagem: data.mensagem,
         tipo: data.tipo,
@@ -105,13 +106,32 @@ const Admin = () => {
       };
 
       if (data.tipo === 'INDIVIDUAL' && data.canal === 'EMAIL') {
-        payload.destinatario = destinatarioEmail;
+        await api.post('/notifications', {
+          ...payloadBase,
+          destinatario: destinatarioEmail,
+        });
+      } else if (data.tipo === 'INDIVIDUAL' && data.canal === 'INTERNA') {
+        if (!destinatariosInternos.length) {
+          setErrorNotification('Selecione pelo menos um usuário para enviar a notificação interna.');
+          return;
+        }
+
+        await Promise.all(
+          destinatariosInternos.map((destinatario) =>
+            api.post('/notifications', {
+              ...payloadBase,
+              targetUserId: String(destinatario),
+            })
+          )
+        );
+      } else {
+        await api.post('/notifications', payloadBase);
       }
 
-      await api.post('/notifications', payload);
       setSuccessNotification('Notificação enviada com sucesso!');
       resetNotification();
       setDestinatarioEmail('');
+      setDestinatariosInternos([]);
     } catch (err) {
       setErrorNotification(err.response?.data?.message || 'Erro ao enviar notificação');
     }
@@ -370,6 +390,27 @@ const Admin = () => {
                   <option value="">Selecione um usuário...</option>
                   {users.map((u) => (
                     <option key={u.id} value={u.email}>
+                      {u.nomeCompleto} — {u.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {tipoNotificacao === 'INDIVIDUAL' && canalNotificacao === 'INTERNA' && (
+              <div style={styles.formGroup}>
+                <label style={styles.label}>Destinatários</label>
+                <select
+                  multiple
+                  value={destinatariosInternos}
+                  onChange={(e) => {
+                    const values = Array.from(e.target.selectedOptions).map((opt) => opt.value);
+                    setDestinatariosInternos(values);
+                  }}
+                  style={{ ...styles.select, minHeight: '140px' }}
+                >
+                  {users.map((u) => (
+                    <option key={u.id} value={u.id}>
                       {u.nomeCompleto} — {u.email}
                     </option>
                   ))}
