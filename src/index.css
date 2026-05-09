@@ -51,7 +51,7 @@ code {
 }
 
 #root {
-  min-height: auto;
+  min-height: 100vh;
 }
 
 /* Scrollbar personalizada */
